@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Peso de Coletor - Heliroma</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+  :root{
+    --ink-900:#0a1f33;
+    --ink-800:#0f2a47;
+    --ink-700:#15355a;
+    --paper:#edeff2;
+    --paper-dim:#a9b7c6;
+    --line:#2c4a66;
+    --accent:#ff8a00;
+    --accent-dim:#b45f00;
+    --ok:#35d0a0;
+    --danger:#ff5a5a;
+    --danger-dim:#b83a3a;
+    --radius:2px;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--line) 1px, transparent 1px) 0 0/40px 40px,
+      linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/40px 40px,
+      var(--ink-900);
+    background-blend-mode: overlay, overlay, normal;
+    min-height:100vh;
+    color:var(--paper);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{ background:var(--accent); color:var(--ink-900); }
+
+  :focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:3px;
+  }
+
+  .module-nav{
+    border-bottom:1px solid var(--line);
+    background:rgba(10,31,51,0.6);
+    backdrop-filter:blur(6px);
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  .module-nav .nav-wrap{
+    max-width:1040px;
+    margin:0 auto;
+    padding:18px 24px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+  }
+  .module-nav .nav-wordmark{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    letter-spacing:0.02em;
+    font-size:15px;
+    color:var(--paper);
+    white-space:nowrap;
+  }
+  .module-nav .nav-wordmark span{ color:var(--accent); }
+  .module-nav .nav-tabs{
+    display:flex;
+    gap:6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+  }
+  .module-nav .nav-tab{
+    text-decoration:none;
+    color:var(--paper-dim);
+    border:1px solid var(--line);
+    padding:7px 14px;
+    border-radius:var(--radius);
+    transition:color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .module-nav .nav-tab:hover{
+    color:var(--paper);
+    border-color:var(--accent-dim);
+  }
+  .module-nav .nav-tab.is-active{
+    color:var(--ink-900);
+    background:var(--accent);
+    border-color:var(--accent);
+  }
+  .module-nav .nav-eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    color:var(--paper-dim);
+    border:1px solid var(--line);
+    padding:5px 10px;
+    border-radius:var(--radius);
+    white-space:nowrap;
+  }
+  @media (max-width:640px){
+    .module-nav .nav-wrap{ flex-wrap:wrap; row-gap:10px; }
+    .module-nav .nav-tabs{ order:3; width:100%; justify-content:center; padding-top:8px; }
+  }
+
+  .page-wrap{
+    max-width:1040px;
+    margin:0 auto;
+    padding:32px 20px;
+  }
+
+  .container{
+    max-width:1040px;
+    margin:0 auto;
+    position:relative;
+    padding:22px;
+    border:1px solid var(--line);
+    background:rgba(15,42,71,0.4);
+  }
+
+  .container .corner-tl, .container .corner-tr, .container .corner-bl, .container .corner-br{
+    content:"";
+    position:absolute;
+    width:18px; height:18px;
+    border-color:var(--accent);
+    border-style:solid;
+  }
+  .corner-tl{ top:8px; left:8px; border-width:2px 0 0 2px; }
+  .corner-tr{ top:8px; right:8px; border-width:2px 2px 0 0; }
+  .corner-bl{ bottom:8px; left:8px; border-width:0 0 2px 2px; }
+  .corner-br{ bottom:8px; right:8px; border-width:0 2px 2px 0; }
+
+  .header{
+    color:var(--paper);
+    padding:26px 24px 22px;
+    text-align:center;
+    position:relative;
+    border-bottom:1px solid var(--line);
+  }
+
+  .header h1{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:clamp(24px, 3.6vw, 34px);
+    letter-spacing:-0.01em;
+    margin-bottom:8px;
+  }
+
+  .header p{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--paper-dim);
+  }
+
+  .version-badge{
+    position:absolute;
+    top:20px;
+    right:20px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    color:var(--paper-dim);
+    border:1px solid var(--line);
+    padding:5px 10px;
+    border-radius:var(--radius);
+    background:none;
+  }
+
+  .content{
+    padding:32px 24px 8px;
+  }
+
+  .section{
+    margin-bottom:36px;
+  }
+
+  .section-title{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--paper);
+    margin-bottom:20px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--line);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  .form-group{
+    margin-bottom:20px;
+  }
+
+  .form-group label{
+    display:block;
+    margin-bottom:8px;
+    color:var(--paper-dim);
+    font-weight:500;
+    font-size:11px;
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+  }
+
+  .required-indicator{
+    color:var(--accent);
+    font-weight:bold;
+    margin-left:4px;
+  }
+
+  .form-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+
+  @media (max-width:768px){
+    .form-row{ grid-template-columns:1fr; }
+  }
+
+  select, input[type="number"], input[type="text"]{
+    width:100%;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    font-size:0.95em;
+    background:var(--ink-800);
+    color:var(--paper);
+    font-family:'IBM Plex Sans', sans-serif;
+    transition:border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  select:focus, input[type="number"]:focus, input[type="text"]:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(255,138,0,0.15);
+  }
+
+  select.error, input[type="number"].error, input[type="text"].error{
+    border-color:var(--danger);
+    box-shadow:0 0 0 3px rgba(255,90,90,0.12);
+  }
+
+  .error-message{
+    color:var(--danger);
+    font-size:0.85em;
+    margin-top:6px;
+    display:none;
+    font-family:'IBM Plex Mono', monospace;
+    animation:slideDown 0.3s ease;
+  }
+
+  .error-message.show{ display:block; }
+
+  @keyframes slideDown{
+    from{ opacity:0; transform:translateY(-8px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .success-message{
+    background:rgba(53,208,160,0.1);
+    border-left:3px solid var(--ok);
+    padding:12px 16px;
+    border-radius:var(--radius);
+    margin-bottom:20px;
+    color:var(--ok);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.9em;
+    display:none;
+    animation:slideDown 0.3s ease;
+  }
+
+  .success-message.show{ display:block; }
+
+  .info-display{
+    margin-top:16px;
+    border:1px solid var(--line);
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  @media (max-width:768px){
+    .info-display{ grid-template-columns:1fr; }
+  }
+
+  .info-item{
+    display:flex;
+    flex-direction:column;
+    padding:14px 16px;
+    border-right:1px solid var(--line);
+  }
+
+  .info-item:last-child{ border-right:none; }
+
+  .info-label{
+    font-size:10px;
+    color:var(--paper-dim);
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+  }
+
+  .info-value{
+    font-size:1.05em;
+    color:var(--paper);
+    font-weight:600;
+    margin-top:6px;
+  }
+
+  .table-wrapper{
+    overflow-x:auto;
+  }
+
+  .accessories-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+    border:1px solid var(--line);
+  }
+
+  .accessories-table thead{
+    background:var(--ink-800);
+    border-bottom:1px solid var(--line);
+  }
+
+  .accessories-table th{
+    padding:14px 15px;
+    text-align:left;
+    color:var(--paper-dim);
+    font-weight:600;
+    font-size:11px;
+    font-family:'IBM Plex Mono', monospace;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
+
+  .accessories-table td{
+    padding:14px 15px;
+    border-bottom:1px solid var(--line);
+    color:var(--paper);
+  }
+
+  .accessories-table tr:hover{
+    background:rgba(255,138,0,0.04);
+  }
+
+  .small-input{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    font-size:0.9em;
+    background:var(--ink-900);
+    color:var(--paper);
+    font-family:'IBM Plex Sans', sans-serif;
+  }
+
+  .small-input:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 2px rgba(255,138,0,0.12);
+  }
+
+  .btn-remove{
+    background:none;
+    color:var(--danger);
+    border:1px solid var(--danger-dim);
+    padding:8px 12px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    font-weight:600;
+    font-size:0.85em;
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.04em;
+    transition:color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    width:100%;
+  }
+
+  .btn-remove:hover{
+    color:var(--paper);
+    background:var(--danger);
+    border-color:var(--danger);
+  }
+
+  .btn-add-accessory{
+    background:none;
+    color:var(--accent);
+    border:1px solid var(--accent-dim);
+    padding:12px 20px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    font-weight:600;
+    font-size:0.9em;
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    transition:color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    margin-top:15px;
+  }
+
+  .btn-add-accessory:hover{
+    color:var(--ink-900);
+    background:var(--accent);
+    border-color:var(--accent);
+  }
+
+  .button-container{
+    display:flex;
+    gap:15px;
+    margin-top:30px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+
+  .btn-calculate{
+    background:var(--accent);
+    color:var(--ink-900);
+    border:1px solid var(--accent);
+    padding:15px 46px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    font-weight:700;
+    font-size:1em;
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    transition:background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .btn-calculate:hover{
+    background:var(--accent-dim);
+    border-color:var(--accent-dim);
+  }
+
+  .btn-calculate:active{
+    transform:translateY(1px);
+  }
+
+  .btn-secondary{
+    background:none;
+    color:var(--paper-dim);
+    border:1px solid var(--line);
+    padding:12px 22px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    font-weight:600;
+    font-size:0.9em;
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.04em;
+    transition:color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .btn-secondary:hover{
+    color:var(--paper);
+    border-color:var(--accent-dim);
+  }
+
+  .btn-secondary:disabled{
+    color:var(--line);
+    border-color:var(--line);
+    cursor:not-allowed;
+  }
+
+  .summary-panel{
+    position:relative;
+    background:rgba(15,42,71,0.4);
+    color:var(--paper);
+    padding:40px;
+    border:1px solid var(--line);
+    margin-top:40px;
+    text-align:center;
+    display:none;
+    animation:slideInUp 0.4s ease;
+  }
+
+  .summary-panel.show{ display:block; }
+
+  .summary-panel .corner-tl, .summary-panel .corner-tr,
+  .summary-panel .corner-bl, .summary-panel .corner-br{
+    content:"";
+    position:absolute;
+    width:16px; height:16px;
+    border-color:var(--accent);
+    border-style:solid;
+  }
+
+  @keyframes slideInUp{
+    from{ opacity:0; transform:translateY(20px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .summary-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    color:var(--paper-dim);
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+
+  .summary-weight{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:3.2em;
+    font-weight:700;
+    color:var(--accent);
+    margin:16px 0;
+  }
+
+  .summary-unit{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:1.1em;
+    color:var(--paper-dim);
+  }
+
+  .summary-actions{
+    display:flex;
+    gap:12px;
+    justify-content:center;
+    margin-top:24px;
+    flex-wrap:wrap;
+  }
+
+  .no-accessories{
+    padding:30px;
+    text-align:center;
+    color:var(--paper-dim);
+    background:rgba(15,42,71,0.3);
+    border:1px dashed var(--line);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.9em;
+  }
+
+  .history-panel{
+    background:rgba(15,42,71,0.3);
+    border:1px solid var(--line);
+    padding:20px;
+    margin-top:20px;
+    display:none;
+  }
+
+  .history-panel.show{ display:block; }
+
+  .history-title{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--paper-dim);
+    margin-bottom:15px;
+  }
+
+  .history-item{
+    background:var(--ink-800);
+    padding:14px 16px;
+    border:1px solid var(--line);
+    border-left:3px solid var(--accent);
+    margin-bottom:8px;
+    border-radius:var(--radius);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:0.9em;
+  }
+
+  .history-item-details{ flex:1; }
+
+  .history-item-time{
+    color:var(--paper-dim);
+    font-size:0.85em;
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  .history-item-weight{
+    font-weight:600;
+    color:var(--accent);
+    margin:4px 0;
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  .history-item-config{
+    color:var(--paper-dim);
+    font-size:0.85em;
+  }
+
+  .history-action{
+    margin-left:12px;
+    display:flex;
+    gap:8px;
+  }
+
+  .history-action button{
+    background:none;
+    color:var(--accent);
+    border:1px solid var(--accent-dim);
+    padding:7px 14px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    font-size:0.82em;
+    font-family:'IBM Plex Mono', monospace;
+    transition:color 0.15s ease, background 0.15s ease;
+    white-space:nowrap;
+  }
+
+  .history-action button:hover{
+    color:var(--ink-900);
+    background:var(--accent);
+  }
+
+  .history-action .btn-delete-history{
+    color:var(--danger);
+    border-color:var(--danger-dim);
+  }
+
+  .history-action .btn-delete-history:hover{
+    color:var(--paper);
+    background:var(--danger);
+  }
+
+  .toast{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:var(--ink-800);
+    color:var(--paper);
+    padding:16px 24px;
+    border:1px solid var(--line);
+    border-left:3px solid var(--paper-dim);
+    border-radius:var(--radius);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.9em;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+    animation:slideInRight 0.3s ease;
+    z-index:1000;
+  }
+
+  .toast.success{ border-left-color:var(--ok); color:var(--ok); }
+  .toast.error{ border-left-color:var(--danger); color:var(--danger); }
+
+  @keyframes slideInRight{
+    from{ opacity:0; transform:translateX(400px); }
+    to{ opacity:1; transform:translateX(0); }
+  }
+
+  .loading{
+    display:inline-block;
+    width:16px; height:16px;
+    border:2px solid var(--line);
+    border-top:2px solid var(--accent);
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+  }
+
+  @keyframes spin{
+    0%{ transform:rotate(0deg); }
+    100%{ transform:rotate(360deg); }
+  }
+
+  .weight-highlight{
+    color:var(--accent);
+    font-weight:700;
+  }
+
+  .print-button{
+    background:none;
+    color:var(--paper-dim);
+    border:1px solid var(--line);
+    padding:12px 24px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    font-weight:600;
+    font-size:0.9em;
+    font-family:'IBM Plex Mono', monospace;
+    transition:color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .print-button:hover{
+    color:var(--paper);
+    border-color:var(--accent-dim);
+  }
+
+  @media print{
+    body{ background:#fff; color:#111; padding:0; }
+    .container{ border:none; background:#fff; }
+    .corner-tl, .corner-tr, .corner-bl, .corner-br{ display:none; }
+    .header, .button-container, .summary-actions{ page-break-inside:avoid; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+  }
+
+  .tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:24px;
+    border-bottom:1px solid var(--line);
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  .tab-button{
+    background:none;
+    border:1px solid transparent;
+    border-bottom:none;
+    padding:10px 18px;
+    cursor:pointer;
+    font-weight:600;
+    font-size:0.85em;
+    letter-spacing:0.04em;
+    color:var(--paper-dim);
+    transition:color 0.15s ease, border-color 0.15s ease;
+    border-radius:var(--radius) var(--radius) 0 0;
+    margin-bottom:-1px;
+  }
+
+  .tab-button.active{
+    color:var(--accent);
+    border-color:var(--line);
+    border-bottom:1px solid var(--ink-900);
+    background:rgba(255,138,0,0.06);
+  }
+
+  .tab-button:hover{
+    color:var(--paper);
+  }
+</style>
+</head>
+<body>
+    <nav class="module-nav" aria-label="Navegação entre módulos">
+        <div class="nav-wrap">
+            <div class="nav-wordmark">IFC<span>///</span>VIEWER</div>
+            <div class="nav-tabs">
+                <a class="nav-tab" href="index.html">Visualizador IFC</a>
+                <a class="nav-tab" href="HELIROMA-CALC.html">Calculadora PP-R</a>
+                <a class="nav-tab is-active" href="COLETOR-PESO.html">Calculadora de Peso</a>
+                <a class="nav-tab" href="RESISTENCIA-QUIMICA-BUSCA.html">Resistência Química</a>
+            </div>
+            <div class="nav-eyebrow">PESO</div>
+        </div>
+    </nav>
+
+    <div class="page-wrap">
+    <div class="container">
+        <span class="corner-tl"></span><span class="corner-tr"></span>
+        <span class="corner-bl"></span><span class="corner-br"></span>
+        <div class="header">
+            <h1>⚙️ Calculadora de Peso de Coletor</h1>
+            <p>Sistema de Cálculo Integrado - Heliroma</p>
+            <div class="version-badge">v2.0</div>
+        </div>
+
+        <div class="content">
+            <!-- Abas de navegação -->
+            <div class="tabs">
+                <button class="tab-button active" data-tab="calculator" data-action="switch-tab">
+                    🧮 Calculadora
+                </button>
+                <button class="tab-button" data-tab="history" data-action="switch-tab">
+                    📋 Histórico
+                </button>
+            </div>
+
+            <!-- Painel de calculadora -->
+            <div id="calculator-tab" class="tab-content">
+                <div id="successMessage" class="success-message">
+                    <strong>✓ Sucesso!</strong> Cálculo salvo no histórico.
+                </div>
+
+                <form id="calculadoraForm" novalidate>
+                    <!-- Secção do Tubo Principal -->
+                    <div class="section">
+                        <h2 class="section-title">📏 Tubo Principal</h2>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tipoTubo">
+                                    Tipo de Tubo
+                                    <span class="required-indicator">*</span>
+                                </label>
+                                <select id="tipoTubo" required aria-label="Selecione o tipo de tubo">
+                                    <option value="">Selecione um tipo de tubo...</option>
+                                </select>
+                                <div class="error-message" id="tipoTubo-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="diametroTubo">
+                                    Diâmetro (DN)
+                                    <span class="required-indicator">*</span>
+                                </label>
+                                <select id="diametroTubo" required aria-label="Selecione o diâmetro do tubo">
+                                    <option value="">Selecione um diâmetro...</option>
+                                </select>
+                                <div class="error-message" id="diametroTubo-error"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="comprimento">
+                                Comprimento (m)
+                                <span class="required-indicator">*</span>
+                            </label>
+                            <input type="number" id="comprimento" min="0.01" step="0.1" 
+                                   placeholder="Digite o comprimento em metros" required
+                                   aria-label="Comprimento do tubo em metros"
+                                   aria-describedby="comprimento-help">
+                            <div class="error-message" id="comprimento-error"></div>
+                            <small id="comprimento-help" style="color: #999; display: block; margin-top: 6px;">
+                                Digite um valor entre 0.01 m e 9999.99 m
+                            </small>
+                        </div>
+
+                        <div class="info-display" id="infoTubo">
+                            <div class="info-item">
+                                <span class="info-label">Referência</span>
+                                <span class="info-value" id="refTubo">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Peso por Metro</span>
+                                <span class="info-value" id="pesoMetroTubo">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Peso Total do Tubo</span>
+                                <span class="info-value weight-highlight" id="pesoTotalTubo">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secção de Acessórios -->
+                    <div class="section">
+                        <h2 class="section-title">🔧 Acessórios</h2>
+                        
+                        <div id="acessoriosContainer">
+                            <div class="no-accessories">
+                                <p>Nenhum acessório adicionado</p>
+                                <p style="font-size: 0.9em;">Clique no botão abaixo para começar</p>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-add-accessory" id="btnAdicionarAcessorio"
+                                aria-label="Adicionar novo acessório à lista">
+                            + Adicionar Acessório
+                        </button>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="button-container">
+                        <button type="submit" class="btn-calculate" aria-label="Calcular peso total">
+                            🧮 Calcular Peso Total
+                        </button>
+                        <button type="reset" class="btn-secondary" aria-label="Limpar formulário">
+                            ↻ Limpar
+                        </button>
+                        <button type="button" class="print-button" data-action="imprimir"
+                                id="btnImprimir" style="display: none;"
+                                aria-label="Imprimir resultado">
+                            🖨️ Imprimir
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Painel de Resumo -->
+                <div class="summary-panel" id="summaryPanel">
+                    <span class="corner-tl"></span><span class="corner-tr"></span>
+                    <span class="corner-bl"></span><span class="corner-br"></span>
+                    <div class="summary-label">Peso Final do Coletor</div>
+                    <div class="summary-weight" id="pesoFinal">0.00</div>
+                    <div class="summary-unit">kg</div>
+                    <div class="summary-actions">
+                        <button type="button" class="btn-secondary print-button" data-action="imprimir"
+                                aria-label="Imprimir cálculo atual">
+                            🖨️ Imprimir
+                        </button>
+                        <button type="button" class="btn-secondary" data-action="copiar"
+                                aria-label="Copiar resultado para área de transferência">
+                            📋 Copiar
+                        </button>
+                        <button type="button" class="btn-secondary" data-action="exportar-csv"
+                                aria-label="Exportar dados em formato CSV">
+                            📊 Exportar CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel de histórico -->
+            <div id="history-tab" class="tab-content" style="display: none;">
+                <div class="history-panel show" id="historyPanel">
+                    <div class="history-title">📋 Histórico de Cálculos</div>
+                    <div id="historyList">
+                        <p style="color: #999; text-align: center; padding: 20px;">
+                            Nenhum cálculo realizado ainda. Realize um cálculo para ver aqui.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script src="heliroma-data.js"></script>
+    <script>
+        // ============================================
+        // CONSTANTES E CONFIGURAÇÃO
+        // ============================================
+
+        const CONFIG = {
+            MAX_ACCESSORIES: 100,
+            MAX_COMPRIMENTO: 9999.99,
+            MIN_COMPRIMENTO: 0.01,
+            STORAGE_KEY_HISTORY: 'heliroma_history',
+            STORAGE_KEY_CURRENT: 'heliroma_current',
+            MAX_HISTORY_ITEMS: 50,
+            PRECISION_THRESHOLD: 1 // kg
+        };
+
+        // Estado da aplicação
+        const appState = {
+            acessorios: [],
+            calculos: []
+        };
+
+        // Cache de seletores (performance)
+        const selectors = {
+            form: null,
+            tipoTubo: null,
+            diametroTubo: null,
+            comprimento: null,
+            refTubo: null,
+            pesoMetroTubo: null,
+            pesoTotalTubo: null,
+            acessoriosContainer: null,
+            btnAdicionarAcessorio: null,
+            summaryPanel: null,
+            pesoFinal: null,
+            btnImprimir: null,
+            successMessage: null,
+            historyList: null
+        };
+
+        let HELIROMA_DATA = null;
+
+        // ============================================
+        // FUNÇÕES UTILITÁRIAS
+        // ============================================
+
+        /**
+         * Formata peso com precisão adaptativa
+         */
+        function formatarPeso(valor) {
+            if (valor < 1) return valor.toFixed(3);
+            if (valor < 100) return valor.toFixed(2);
+            return valor.toFixed(1);
+        }
+
+        /**
+         * Valida e limpa número de entrada
+         */
+        function validarNumero(valor, min, max) {
+            const num = parseFloat(valor);
+            if (isNaN(num)) return null;
+            return Math.max(min, Math.min(max, num));
+        }
+
+        /**
+         * Mostra mensagem de erro em um campo
+         */
+        function mostrarErro(fieldId, mensagem) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(`${fieldId}-error`);
+            
+            if (field) {
+                field.classList.add('error');
+            }
+            if (errorElement) {
+                errorElement.textContent = mensagem;
+                errorElement.classList.add('show');
+            }
+        }
+
+        /**
+         * Limpa erro de um campo
+         */
+        function limparErro(fieldId) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(`${fieldId}-error`);
+            
+            if (field) {
+                field.classList.remove('error');
+            }
+            if (errorElement) {
+                errorElement.textContent = '';
+                errorElement.classList.remove('show');
+            }
+        }
+
+        /**
+         * Mostra notificação tipo Toast
+         */
+        function mostrarToast(mensagem, tipo = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+            toast.textContent = mensagem;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideInRight 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        /**
+         * Mostra mensagem de sucesso com fade-out
+         */
+        function mostrarSucesso() {
+            const msg = selectors.successMessage;
+            msg.classList.add('show');
+            setTimeout(() => {
+                msg.classList.remove('show');
+            }, 3000);
+        }
+
+        /**
+         * Carrega dados da estrutura de dados (JSON) ou recupera do cache
+         */
+        async function carregarDados() {
+            try {
+                // Os dados vêm de heliroma-data.js (carregado via <script src>),
+                // e não de fetch(): tags <script> não são bloqueadas por CORS
+                // em file://, ao contrário de fetch()/XHR. Isto permite abrir
+                // o ficheiro diretamente com duplo clique, sem precisar de
+                // um servidor local.
+                if (typeof window.HELIROMA_DATA_EXTERNAL === 'undefined') {
+                    throw new Error('heliroma-data.js não foi encontrado ou não carregou.');
+                }
+                HELIROMA_DATA = window.HELIROMA_DATA_EXTERNAL;
+                return true;
+            } catch (erro) {
+                console.error('Erro ao carregar dados:', erro);
+                mostrarToast('Erro ao carregar dados. Verifique se o ficheiro heliroma-data.js está na mesma pasta que este HTML.', 'error');
+                return false;
+            }
+        }
+
+
+        // ============================================
+        // GESTÃO DE HISTÓRICO
+        // ============================================
+
+        function carregarHistorico() {
+            try {
+                const stored = localStorage.getItem(CONFIG.STORAGE_KEY_HISTORY);
+                return stored ? JSON.parse(stored) : [];
+            } catch (erro) {
+                console.error('Erro ao carregar histórico:', erro);
+                return [];
+            }
+        }
+
+        function salvarNoHistorico(calculo) {
+            try {
+                let historico = carregarHistorico();
+                
+                calculo.id = Date.now();
+                calculo.timestamp = new Date().toISOString();
+                
+                historico.unshift(calculo);
+                historico = historico.slice(0, CONFIG.MAX_HISTORY_ITEMS);
+                
+                localStorage.setItem(CONFIG.STORAGE_KEY_HISTORY, JSON.stringify(historico));
+                appState.calculos = historico;
+                
+                mostrarSucesso();
+                atualizarHistoricoUI();
+            } catch (erro) {
+                console.error('Erro ao salvar no histórico:', erro);
+                mostrarToast('Erro ao salvar cálculo no histórico', 'error');
+            }
+        }
+
+        function atualizarHistoricoUI() {
+            const historico = carregarHistorico();
+            const historyList = selectors.historyList;
+
+            if (!historico || historico.length === 0) {
+                historyList.innerHTML = `
+                    <p style="color: #999; text-align: center; padding: 20px;">
+                        Nenhum cálculo realizado ainda. Realize um cálculo para ver aqui.
+                    </p>
+                `;
+                return;
+            }
+
+            historyList.innerHTML = historico.map(calculo => {
+                const data = new Date(calculo.timestamp);
+                const dataFormatada = data.toLocaleDateString('pt-PT') + ' ' + data.toLocaleTimeString('pt-PT');
+                
+                return `
+                    <div class="history-item">
+                        <div class="history-item-details">
+                            <div class="history-item-weight">${calculo.pesoTotal} kg</div>
+                            <div class="history-item-config">
+                                ${calculo.tipoTubo} | DN ${calculo.diametro} | ${calculo.comprimento}m
+                                ${calculo.totalAcessorios > 0 ? ` | ${calculo.totalAcessorios} acessório(s)` : ''}
+                            </div>
+                            <div class="history-item-time">${dataFormatada}</div>
+                        </div>
+                        <div class="history-action">
+                            <button data-action="restaurar" data-id="${calculo.id}" title="Restaurar este cálculo">
+                                ↺ Restaurar
+                            </button>
+                            <button data-action="apagar-historico" data-id="${calculo.id}" class="btn-delete-history" title="Apagar este cálculo">
+                                ✕ Apagar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function removerDoHistorico(id) {
+            try {
+                let historico = carregarHistorico();
+                historico = historico.filter(c => c.id !== id);
+
+                localStorage.setItem(CONFIG.STORAGE_KEY_HISTORY, JSON.stringify(historico));
+                appState.calculos = historico;
+
+                atualizarHistoricoUI();
+                mostrarToast('Cálculo apagado do histórico', 'success');
+            } catch (erro) {
+                console.error('Erro ao apagar cálculo do histórico:', erro);
+                mostrarToast('Erro ao apagar cálculo do histórico', 'error');
+            }
+        }
+
+        function restaurarCalculo(id) {
+            const historico = carregarHistorico();
+            const calculo = historico.find(c => c.id === id);
+
+            if (!calculo) {
+                mostrarToast('Cálculo não encontrado', 'error');
+                return;
+            }
+
+            try {
+                selectors.tipoTubo.value = calculo.tipoTubo;
+                selectors.tipoTubo.dispatchEvent(new Event('change'));
+                
+                setTimeout(() => {
+                    selectors.diametroTubo.value = calculo.diametro;
+                    selectors.diametroTubo.dispatchEvent(new Event('change'));
+                    
+                    selectors.comprimento.value = calculo.comprimento;
+                    selectors.comprimento.dispatchEvent(new Event('input'));
+                    
+                    appState.acessorios = JSON.parse(calculo.acessoriosJSON || '[]');
+                    renderizarAcessorios();
+                    
+                    switchTab('calculator');
+                    mostrarToast('Cálculo restaurado com sucesso', 'success');
+                }, 100);
+            } catch (erro) {
+                console.error('Erro ao restaurar cálculo:', erro);
+                mostrarToast('Erro ao restaurar cálculo', 'error');
+            }
+        }
+
+        // ============================================
+        // GESTÃO DE ABAS
+        // ============================================
+
+        function switchTab(tabName) {
+            // Esconde todos os tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+            
+            // Remove classe active de todos os botões
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostra tab selecionado
+            const tab = document.getElementById(`${tabName}-tab`);
+            if (tab) {
+                tab.style.display = 'block';
+            }
+            
+            // Marca botão como active
+            const btn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (btn) {
+                btn.classList.add('active');
+            }
+
+            // Atualiza histórico se necessário
+            if (tabName === 'history') {
+                atualizarHistoricoUI();
+            }
+        }
+
+        // ============================================
+        // PREENCHIMENTO DE DADOS
+        // ============================================
+
+        function preencherTiposTubos() {
+            const selectTubo = selectors.tipoTubo;
+            const tipos = Object.keys(HELIROMA_DATA.tubos);
+            
+            tipos.forEach(tipo => {
+                const option = document.createElement('option');
+                option.value = tipo;
+                option.textContent = tipo;
+                selectTubo.appendChild(option);
+            });
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+
+        function setupEventListeners() {
+            selectors.tipoTubo.addEventListener('change', atualizarDiametrosTubo);
+            selectors.diametroTubo.addEventListener('change', atualizarInfoTubo);
+            selectors.comprimento.addEventListener('input', atualizarInfoTubo);
+            selectors.comprimento.addEventListener('change', () => {
+                limparErro('comprimento');
+            });
+            
+            selectors.btnAdicionarAcessorio.addEventListener('click', adicionarAcessorio);
+            selectors.form.addEventListener('submit', calcularPesoTotal);
+            selectors.form.addEventListener('reset', resetarFormulario);
+
+            // Delegação de eventos: um único listener trata todos os
+            // botões marcados com data-action (tabs, imprimir, copiar,
+            // exportar, restaurar histórico, remover acessório), em vez
+            // de handlers "onclick" espalhados pelo HTML gerado.
+            document.body.addEventListener('click', handleDelegatedClick);
+
+            // Idem para as mudanças nos campos de cada linha de acessório
+            // (tipo, diâmetro, quantidade), identificados por data-field.
+            selectors.acessoriosContainer.addEventListener('change', handleAcessorioChange);
+        }
+
+        function handleDelegatedClick(evento) {
+            const alvo = evento.target.closest('[data-action]');
+            if (!alvo) return;
+
+            switch (alvo.dataset.action) {
+                case 'switch-tab':
+                    switchTab(alvo.dataset.tab);
+                    break;
+                case 'imprimir':
+                    imprimirResultado();
+                    break;
+                case 'copiar':
+                    copiarParaClipboard();
+                    break;
+                case 'exportar-csv':
+                    exportarCSV();
+                    break;
+                case 'restaurar':
+                    restaurarCalculo(parseInt(alvo.dataset.id, 10));
+                    break;
+                case 'apagar-historico':
+                    removerDoHistorico(parseInt(alvo.dataset.id, 10));
+                    break;
+                case 'remover':
+                    removerAcessorio(parseInt(alvo.dataset.id, 10));
+                    break;
+            }
+        }
+
+        function handleAcessorioChange(evento) {
+            const campo = evento.target.dataset.field;
+            if (!campo) return;
+
+            const linha = evento.target.closest('tr[data-accessory-id]');
+            if (!linha) return;
+
+            atualizarAcessorio(parseInt(linha.dataset.accessoryId, 10), campo, evento.target.value);
+        }
+
+        // ============================================
+        // ATUALIZAÇÃO DE DIÂMETROS
+        // ============================================
+
+        function atualizarDiametrosTubo() {
+            const tipoTubo = selectors.tipoTubo.value;
+            limparErro('tipoTubo');
+            
+            selectors.diametroTubo.innerHTML = '<option value="">Selecione um diâmetro...</option>';
+            
+            if (!tipoTubo) {
+                atualizarInfoTubo();
+                return;
+            }
+
+            try {
+                const tubos = HELIROMA_DATA.tubos[tipoTubo];
+                const diametros = [...new Set(tubos.map(t => t.dn))];
+
+                diametros.forEach(dn => {
+                    const option = document.createElement('option');
+                    option.value = dn;
+                    option.textContent = `DN ${dn}`;
+                    selectors.diametroTubo.appendChild(option);
+                });
+
+                selectors.diametroTubo.value = '';
+                atualizarInfoTubo();
+            } catch (erro) {
+                console.error('Erro ao atualizar diâmetros:', erro);
+                mostrarToast('Erro ao atualizar diâmetros', 'error');
+            }
+        }
+
+        // ============================================
+        // ATUALIZAÇÃO DE INFORMAÇÕES
+        // ============================================
+
+        function atualizarInfoTubo() {
+            const tipoTubo = selectors.tipoTubo.value;
+            const diametro = parseInt(selectors.diametroTubo.value) || null;
+            const comprimento = parseFloat(selectors.comprimento.value) || 0;
+
+            if (!tipoTubo || !diametro) {
+                selectors.refTubo.textContent = '-';
+                selectors.pesoMetroTubo.textContent = '-';
+                selectors.pesoTotalTubo.textContent = '-';
+                return;
+            }
+
+            try {
+                const tubo = HELIROMA_DATA.tubos[tipoTubo].find(t => t.dn === diametro);
+                
+                if (tubo) {
+                    selectors.refTubo.textContent = tubo.ref;
+                    selectors.pesoMetroTubo.textContent = `${tubo.weight.toFixed(3)} kg/m`;
+                    
+                    const pesoTotal = tubo.weight * comprimento;
+                    selectors.pesoTotalTubo.textContent = `${formatarPeso(pesoTotal)} kg`;
+                }
+            } catch (erro) {
+                console.error('Erro ao atualizar informações do tubo:', erro);
+            }
+        }
+
+        // ============================================
+        // GESTÃO DE ACESSÓRIOS
+        // ============================================
+
+        function adicionarAcessorio() {
+            if (appState.acessorios.length >= CONFIG.MAX_ACCESSORIES) {
+                mostrarToast(`Limite de ${CONFIG.MAX_ACCESSORIES} acessórios atingido`, 'error');
+                return;
+            }
+
+            const id = Date.now();
+            appState.acessorios.push({
+                id,
+                tipo: '',
+                diametro: '',
+                quantidade: 1
+            });
+            
+            renderizarAcessorios();
+        }
+
+        function removerAcessorio(id) {
+            appState.acessorios = appState.acessorios.filter(a => a.id !== id);
+            renderizarAcessorios();
+            mostrarToast('Acessório removido', 'success');
+        }
+
+        /**
+         * Gera o HTML de uma única linha da tabela de acessórios.
+         * Extraído para função própria para poder reconstruir só uma
+         * linha (quando o tipo muda) sem afetar as restantes.
+         */
+        function criarLinhaAcessorioHTML(acessorio) {
+            const tipos = Object.keys(HELIROMA_DATA.acessorios);
+            const optionsTipo = tipos.map(tipo =>
+                `<option value="${tipo}" ${acessorio.tipo === tipo ? 'selected' : ''}>${tipo}</option>`
+            ).join('');
+
+            let optionsDiametro = '<option value="">Selecione...</option>';
+            if (acessorio.tipo) {
+                const acessoriosDoTipo = HELIROMA_DATA.acessorios[acessorio.tipo];
+                const diametrosDisponiveis = [...new Set(acessoriosDoTipo.map(a => a.dn))];
+                optionsDiametro = diametrosDisponiveis.map(dn =>
+                    `<option value="${dn}" ${acessorio.diametro === dn ? 'selected' : ''}>DN ${dn}</option>`
+                ).join('');
+            }
+
+            const { ref, pesoUnitario, pesoTotal } = calcularPesoAcessorio(acessorio);
+
+            return `
+                <tr data-accessory-id="${acessorio.id}">
+                    <td>
+                        <select class="small-input" data-field="tipo">
+                            <option value="">Selecione...</option>
+                            ${optionsTipo}
+                        </select>
+                    </td>
+                    <td>
+                        <select class="small-input" data-field="diametro">
+                            ${optionsDiametro}
+                        </select>
+                    </td>
+                    <td data-cell="ref">${ref} <br><small style="color: #999;">${pesoUnitario} kg</small></td>
+                    <td>
+                        <input type="number" class="small-input" min="1" value="${acessorio.quantidade}" data-field="quantidade">
+                    </td>
+                    <td data-cell="pesoTotal" style="font-weight: 600; color: #667eea;">${pesoTotal} kg</td>
+                    <td>
+                        <button type="button" class="btn-remove" data-action="remover" data-id="${acessorio.id}">
+                            ✕ Remover
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        /**
+         * Calcula referência, peso unitário e peso total de um acessório.
+         * Centraliza a lógica usada em vários pontos (render, cálculo, export).
+         */
+        function calcularPesoAcessorio(acessorio) {
+            let ref = '-';
+            let pesoUnitario = '-';
+            let pesoTotal = '-';
+
+            if (acessorio.tipo && acessorio.diametro) {
+                const item = HELIROMA_DATA.acessorios[acessorio.tipo].find(a => a.dn === parseInt(acessorio.diametro));
+                if (item) {
+                    ref = item.ref;
+                    pesoUnitario = formatarPeso(item.weight);
+                    pesoTotal = formatarPeso(item.weight * acessorio.quantidade);
+                }
+            }
+
+            return { ref, pesoUnitario, pesoTotal };
+        }
+
+        function renderizarAcessorios() {
+            const container = selectors.acessoriosContainer;
+
+            if (appState.acessorios.length === 0) {
+                container.innerHTML = `
+                    <div class="no-accessories">
+                        <p>Nenhum acessório adicionado</p>
+                        <p style="font-size: 0.9em;">Clique no botão abaixo para começar</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const linhas = appState.acessorios.map(criarLinhaAcessorioHTML).join('');
+            container.innerHTML = `
+                <div class="table-wrapper">
+                    <table class="accessories-table">
+                        <thead>
+                            <tr><th>Tipo de Acessório</th><th>Diâmetro</th><th>Referência</th><th>Quantidade</th><th>Peso Total</th><th>Ação</th></tr>
+                        </thead>
+                        <tbody>${linhas}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        /**
+         * Atualiza só a célula de referência/peso de UMA linha, sem tocar
+         * nos elementos de input/select — preserva o foco do utilizador.
+         */
+        function atualizarCelulaPeso(acessorio) {
+            const row = document.querySelector(`tr[data-accessory-id="${acessorio.id}"]`);
+            if (!row) return;
+
+            const { ref, pesoUnitario, pesoTotal } = calcularPesoAcessorio(acessorio);
+            row.querySelector('[data-cell="ref"]').innerHTML = `${ref} <br><small style="color: #999;">${pesoUnitario} kg</small>`;
+            row.querySelector('[data-cell="pesoTotal"]').textContent = `${pesoTotal} kg`;
+        }
+
+        function atualizarAcessorio(id, campo, valor) {
+            const acessorio = appState.acessorios.find(a => a.id === id);
+            if (!acessorio) return;
+
+            if (campo === 'quantidade') {
+                const qtd = parseInt(valor) || 1;
+                acessorio.quantidade = Math.max(1, qtd);
+                // Só atualiza a célula de peso — o input de quantidade mantém o foco.
+                atualizarCelulaPeso(acessorio);
+                return;
+            }
+
+            if (campo === 'diametro') {
+                acessorio.diametro = valor;
+                // As opções do select de diâmetro não mudam aqui, por isso
+                // basta atualizar a célula de peso.
+                atualizarCelulaPeso(acessorio);
+                return;
+            }
+
+            // campo === 'tipo': as opções de diâmetro dependem do tipo,
+            // por isso é necessário reconstruir esta linha (mas só esta).
+            acessorio.tipo = valor;
+            acessorio.diametro = '';
+            const row = document.querySelector(`tr[data-accessory-id="${acessorio.id}"]`);
+            if (row) {
+                row.outerHTML = criarLinhaAcessorioHTML(acessorio);
+            }
+        }
+
+        // ============================================
+        // VALIDAÇÃO DE FORMULÁRIO
+        // ============================================
+
+        function validarFormulario() {
+            let valido = true;
+
+            // Validar tipo de tubo
+            if (!selectors.tipoTubo.value) {
+                mostrarErro('tipoTubo', 'Selecione um tipo de tubo');
+                valido = false;
+            } else {
+                limparErro('tipoTubo');
+            }
+
+            // Validar diâmetro
+            if (!selectors.diametroTubo.value) {
+                mostrarErro('diametroTubo', 'Selecione um diâmetro');
+                valido = false;
+            } else {
+                limparErro('diametroTubo');
+            }
+
+            // Validar comprimento
+            const comprimento = parseFloat(selectors.comprimento.value);
+            if (!selectors.comprimento.value || isNaN(comprimento)) {
+                mostrarErro('comprimento', 'Digite um valor válido');
+                valido = false;
+            } else if (comprimento < CONFIG.MIN_COMPRIMENTO) {
+                mostrarErro('comprimento', `Comprimento mínimo é ${CONFIG.MIN_COMPRIMENTO}m`);
+                valido = false;
+            } else if (comprimento > CONFIG.MAX_COMPRIMENTO) {
+                mostrarErro('comprimento', `Comprimento máximo é ${CONFIG.MAX_COMPRIMENTO}m`);
+                valido = false;
+            } else {
+                limparErro('comprimento');
+            }
+
+            return valido;
+        }
+
+        // ============================================
+        // CÁLCULO DE PESO TOTAL
+        // ============================================
+
+        function calcularPesoTotal(e) {
+            e.preventDefault();
+
+            if (!validarFormulario()) {
+                mostrarToast('Por favor, corrija os erros acima', 'error');
+                return;
+            }
+
+            try {
+                const tipoTubo = selectors.tipoTubo.value;
+                const diametro = parseInt(selectors.diametroTubo.value) || 0;
+                const comprimento = parseFloat(selectors.comprimento.value) || 0;
+
+                let pesoTotal = 0;
+
+                // Peso do tubo principal
+                if (tipoTubo && diametro && comprimento > 0) {
+                    const tubo = HELIROMA_DATA.tubos[tipoTubo].find(t => t.dn === diametro);
+                    if (tubo) {
+                        pesoTotal += tubo.weight * comprimento;
+                    }
+                }
+
+                // Peso dos acessórios
+                appState.acessorios.forEach(acessorio => {
+                    if (acessorio.tipo && acessorio.diametro) {
+                        const item = HELIROMA_DATA.acessorios[acessorio.tipo].find(a => a.dn === parseInt(acessorio.diametro));
+                        if (item) {
+                            pesoTotal += item.weight * acessorio.quantidade;
+                        }
+                    }
+                });
+
+                // Mostrar resultado
+                selectors.pesoFinal.textContent = formatarPeso(pesoTotal);
+                selectors.summaryPanel.classList.add('show');
+                selectors.btnImprimir.style.display = 'inline-block';
+
+                // Salvar no histórico
+                const calculo = {
+                    tipoTubo,
+                    diametro,
+                    comprimento,
+                    pesoTotal: formatarPeso(pesoTotal),
+                    totalAcessorios: appState.acessorios.length,
+                    acessoriosJSON: JSON.stringify(appState.acessorios)
+                };
+                salvarNoHistorico(calculo);
+
+                // Scroll para o resumo
+                setTimeout(() => {
+                    selectors.summaryPanel.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            } catch (erro) {
+                console.error('Erro ao calcular peso:', erro);
+                mostrarToast('Erro ao calcular peso total', 'error');
+            }
+        }
+
+        // ============================================
+        // EXPORTAÇÃO DE DADOS
+        // ============================================
+
+        function exportarCSV() {
+            try {
+                const tipoTubo = selectors.tipoTubo.value;
+                const diametro = selectors.diametroTubo.value;
+                const comprimento = selectors.comprimento.value;
+                const pesoTotal = selectors.pesoFinal.textContent;
+
+                let csv = 'Calculadora de Peso - Heliroma\n';
+                csv += `Data: ${new Date().toLocaleString('pt-PT')}\n\n`;
+                csv += 'TUBO PRINCIPAL\n';
+                csv += `Tipo,Diâmetro,Comprimento (m),Peso/Metro,Peso Total\n`;
+                csv += `"${tipoTubo}",${diametro},${comprimento},${selectors.pesoMetroTubo.textContent},${selectors.pesoTotalTubo.textContent}\n\n`;
+
+                if (appState.acessorios.length > 0) {
+                    csv += 'ACESSÓRIOS\n';
+                    csv += 'Tipo,Diâmetro,Referência,Quantidade,Peso Unitário,Peso Total\n';
+
+                    appState.acessorios.forEach(acessorio => {
+                        if (acessorio.tipo && acessorio.diametro) {
+                            const item = HELIROMA_DATA.acessorios[acessorio.tipo].find(a => a.dn === parseInt(acessorio.diametro));
+                            if (item) {
+                                csv += `"${acessorio.tipo}",${acessorio.diametro},"${item.ref}",${acessorio.quantidade},${item.weight.toFixed(3)},${(item.weight * acessorio.quantidade).toFixed(2)}\n`;
+                            }
+                        }
+                    });
+                }
+
+                csv += `\nPESO TOTAL: ${pesoTotal} kg\n`;
+
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `heliroma_${Date.now()}.csv`);
+                link.style.visibility = 'hidden';
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                mostrarToast('CSV exportado com sucesso', 'success');
+            } catch (erro) {
+                console.error('Erro ao exportar CSV:', erro);
+                mostrarToast('Erro ao exportar CSV', 'error');
+            }
+        }
+
+        // ============================================
+        // IMPRESSÃO
+        // ============================================
+
+        function imprimirResultado() {
+            try {
+                const tipoTubo = selectors.tipoTubo.value;
+                const diametro = selectors.diametroTubo.value;
+                const comprimento = selectors.comprimento.value;
+                const pesoTotal = selectors.pesoFinal.textContent;
+
+                let conteudo = `
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Cálculo de Peso - Heliroma</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            h1 { color: #667eea; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                            th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                            th { background: #f0f0f5; }
+                            .total { font-size: 24px; font-weight: bold; color: #667eea; margin-top: 20px; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>Calculadora de Peso de Coletor - Heliroma</h1>
+                        <p>Data: ${new Date().toLocaleString('pt-PT')}</p>
+
+                        <h2>Tubo Principal</h2>
+                        <table>
+                            <tr>
+                                <th>Tipo</th><th>Diâmetro</th><th>Comprimento</th><th>Peso/Metro</th><th>Peso Total</th>
+                            </tr>
+                            <tr>
+                                <td>${tipoTubo}</td>
+                                <td>DN ${diametro}</td>
+                                <td>${comprimento} m</td>
+                                <td>${selectors.pesoMetroTubo.textContent}</td>
+                                <td>${selectors.pesoTotalTubo.textContent}</td>
+                            </tr>
+                        </table>
+                `;
+
+                if (appState.acessorios.length > 0) {
+                    conteudo += '<h2>Acessórios</h2><table><tr><th>Tipo</th><th>Diâmetro</th><th>Referência</th><th>Quantidade</th><th>Peso Unitário</th><th>Peso Total</th></tr>';
+
+                    appState.acessorios.forEach(acessorio => {
+                        if (acessorio.tipo && acessorio.diametro) {
+                            const item = HELIROMA_DATA.acessorios[acessorio.tipo].find(a => a.dn === parseInt(acessorio.diametro));
+                            if (item) {
+                                conteudo += `
+                                    <tr>
+                                        <td>${acessorio.tipo}</td>
+                                        <td>DN ${acessorio.diametro}</td>
+                                        <td>${item.ref}</td>
+                                        <td>${acessorio.quantidade}</td>
+                                        <td>${item.weight.toFixed(3)} kg</td>
+                                        <td>${(item.weight * acessorio.quantidade).toFixed(2)} kg</td>
+                                    </tr>
+                                `;
+                            }
+                        }
+                    });
+                    conteudo += '</table>';
+                }
+
+                conteudo += `
+                        <div class="total">Peso Total: ${pesoTotal} kg</div>
+                    </body>
+                    </html>
+                `;
+
+                const janela = window.open('', '', 'width=900,height=600');
+                janela.document.write(conteudo);
+                janela.document.close();
+                janela.print();
+            } catch (erro) {
+                console.error('Erro ao imprimir:', erro);
+                mostrarToast('Erro ao imprimir resultado', 'error');
+            }
+        }
+
+        // ============================================
+        // CÓPIA PARA CLIPBOARD
+        // ============================================
+
+        function copiarParaClipboard() {
+            try {
+                const texto = `Calculadora Heliroma\nPeso Total: ${selectors.pesoFinal.textContent} kg\nData: ${new Date().toLocaleString('pt-PT')}`;
+                navigator.clipboard.writeText(texto);
+                mostrarToast('Copiado para área de transferência', 'success');
+            } catch (erro) {
+                console.error('Erro ao copiar:', erro);
+                mostrarToast('Erro ao copiar para área de transferência', 'error');
+            }
+        }
+
+        // ============================================
+        // RESET
+        // ============================================
+
+        function resetarFormulario() {
+            appState.acessorios = [];
+            selectors.summaryPanel.classList.remove('show');
+            selectors.btnImprimir.style.display = 'none';
+            selectors.refTubo.textContent = '-';
+            selectors.pesoMetroTubo.textContent = '-';
+            selectors.pesoTotalTubo.textContent = '-';
+            renderizarAcessorios();
+            mostrarToast('Formulário limpo', 'success');
+        }
+
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+
+        async function inicializar() {
+            try {
+                // Cache de seletores
+                selectors.form = document.getElementById('calculadoraForm');
+                selectors.tipoTubo = document.getElementById('tipoTubo');
+                selectors.diametroTubo = document.getElementById('diametroTubo');
+                selectors.comprimento = document.getElementById('comprimento');
+                selectors.refTubo = document.getElementById('refTubo');
+                selectors.pesoMetroTubo = document.getElementById('pesoMetroTubo');
+                selectors.pesoTotalTubo = document.getElementById('pesoTotalTubo');
+                selectors.acessoriosContainer = document.getElementById('acessoriosContainer');
+                selectors.btnAdicionarAcessorio = document.getElementById('btnAdicionarAcessorio');
+                selectors.summaryPanel = document.getElementById('summaryPanel');
+                selectors.pesoFinal = document.getElementById('pesoFinal');
+                selectors.btnImprimir = document.getElementById('btnImprimir');
+                selectors.successMessage = document.getElementById('successMessage');
+                selectors.historyList = document.getElementById('historyList');
+
+                // Carregar dados
+                const dadosCarregados = await carregarDados();
+                if (!dadosCarregados) {
+                    throw new Error('Falha ao carregar dados');
+                }
+
+                // Setup
+                preencherTiposTubos();
+                setupEventListeners();
+                atualizarHistoricoUI();
+
+                console.log('Aplicação inicializada com sucesso');
+            } catch (erro) {
+                console.error('Erro ao inicializar aplicação:', erro);
+                mostrarToast('Erro ao inicializar aplicação', 'error');
+            }
+        }
+
+        // Iniciar quando o DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', inicializar);
+    </script>
+</body>
+</html>
