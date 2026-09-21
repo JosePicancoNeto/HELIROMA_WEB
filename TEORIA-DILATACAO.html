@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="pt" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teoria da Dilatação Térmica | Braços e Liras de Dilatação</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+<style>
+    * {
+        font-family: 'IBM Plex Sans', sans-serif;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+    }
+    .mono-font { font-family: 'JetBrains Mono', monospace; }
+
+    :root {
+        --primary: #0a1f33;
+        --primary-light: #0f2a47;
+        --primary-lighter: #15355a;
+        --accent: #ff8a00;
+        --accent-dark: #b45f00;
+        --accent-light: #ffb454;
+        --success: #35d0a0;
+        --success-light: #b9f5e4;
+        --warning: #f59e0b;
+        --warning-light: #fef3c7;
+        --border: #2c4a66;
+        --text-primary: #edeff2;
+        --text-secondary: #a9b7c6;
+        --text-tertiary: #7e8ea1;
+        --pipe: #6fae7c;
+        --pipe-dark: #4c7d57;
+    }
+
+    .module-nav {
+        --nav-ink: #0a1f33;
+        --nav-line: #2c4a66;
+        --nav-paper: #edeff2;
+        --nav-paper-dim: #a9b7c6;
+        --nav-accent: #ff8a00;
+        --nav-accent-dim: #b45f00;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: rgba(10, 31, 51, 0.6);
+        backdrop-filter: blur(6px);
+        border-bottom: 1px solid var(--nav-line);
+    }
+    .module-nav .nav-wrap {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 18px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .module-nav .nav-wordmark {
+        font-family: 'IBM Plex Mono', monospace;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        font-size: 15px;
+        color: var(--nav-paper);
+        white-space: nowrap;
+    }
+    .module-nav .nav-wordmark span { color: var(--nav-accent); }
+    .module-nav .nav-tabs {
+        display: flex;
+        gap: 6px;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        flex-wrap: wrap;
+    }
+    .module-nav-link {
+        text-decoration: none;
+        color: var(--nav-paper-dim);
+        border: 1px solid var(--nav-line);
+        padding: 7px 14px;
+        border-radius: 2px;
+        transition: color .15s ease, border-color .15s ease, background .15s ease;
+    }
+    .module-nav-link:hover { color: var(--nav-paper); border-color: var(--nav-accent-dim); }
+    .module-nav-link.is-active { color: var(--nav-ink); background: var(--nav-accent); border-color: var(--nav-accent); }
+    .module-nav .nav-eyebrow {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        color: var(--nav-paper-dim);
+        border: 1px solid var(--nav-line);
+        padding: 5px 10px;
+        border-radius: 2px;
+        white-space: nowrap;
+    }
+    @media (max-width: 640px) {
+        .module-nav .nav-wrap { flex-wrap: wrap; row-gap: 10px; }
+        .module-nav .nav-tabs { order: 3; width: 100%; justify-content: center; }
+    }
+
+    body {
+        background:
+            linear-gradient(var(--border) 1px, transparent 1px) 0 0/40px 40px,
+            linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0/40px 40px,
+            var(--primary);
+        background-blend-mode: overlay, overlay, normal;
+        color: var(--text-primary);
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+    }
+    .content-wrapper { position: relative; z-index: 1; }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+    .card {
+        background: rgba(15, 42, 71, 0.4);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(44, 74, 102, 0.4);
+        border-radius: 2px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .card:hover { border-color: rgba(255, 138, 0, 0.5); box-shadow: 0 0 20px rgba(255, 138, 0, 0.1); }
+
+    .formula-box {
+        background: rgba(15, 23, 42, 0.6);
+        border-left: 4px solid var(--accent);
+        padding: 1.5rem;
+        border-radius: 2px;
+        color: var(--accent-light);
+        transition: all 0.3s ease;
+    }
+    .formula-box:hover { background: rgba(15, 23, 42, 0.8); border-left-color: var(--accent-light); }
+    .formula-box .katex { color: var(--accent-light) !important; font-size: 1.15rem; }
+
+    .info-box {
+        background: rgba(255, 138, 0, 0.08);
+        border-left: 4px solid var(--accent);
+        padding: 1rem 1.25rem;
+        border-radius: 2px;
+        font-size: 0.9375rem;
+        color: var(--accent-light);
+        line-height: 1.6;
+    }
+
+    .badge { background: rgba(255, 138, 0, 0.15); color: var(--accent-light); padding: 0.25rem 0.75rem; border-radius: 2px; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; display: inline-block; }
+    .badge-blue { background: rgba(255, 138, 0, 0.15); color: var(--accent-light); }
+    .badge-green { background: rgba(53, 208, 160, 0.15); color: var(--success-light); }
+
+    .result-table, table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+    .result-table thead th, table thead th {
+        background: rgba(255, 138, 0, 0.1);
+        color: var(--text-primary);
+        padding: 0.75rem 0.75rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid rgba(255, 138, 0, 0.3);
+    }
+    .result-table tbody td, table tbody td {
+        padding: 0.625rem 0.75rem;
+        border-bottom: 1px solid rgba(44, 74, 102, 0.2);
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+    .result-table tbody tr:hover, table tbody tr:hover { background-color: rgba(255, 138, 0, 0.05); }
+
+    .overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 2px; }
+    .overflow-x-auto::-webkit-scrollbar { height: 6px; }
+    .overflow-x-auto::-webkit-scrollbar-track { background: rgba(44, 74, 102, 0.2); border-radius: 2px; }
+    .overflow-x-auto::-webkit-scrollbar-thumb { background: rgba(255, 138, 0, 0.4); border-radius: 2px; }
+    .overflow-x-auto::-webkit-scrollbar-thumb:hover { background: rgba(255, 138, 0, 0.6); }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.5); }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 138, 0, 0.5); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 138, 0, 0.7); }
+
+    .header-gradient { background: linear-gradient(135deg, rgba(255, 138, 0, 0.08) 0%, transparent 100%); }
+
+    .tabs-container { display: flex; border-bottom: 2px solid rgba(44, 74, 102, 0.4); gap: 0.5rem; overflow-x: auto; }
+    .tab-button {
+        padding: 0.75rem 1.5rem; background: transparent; border: none; color: var(--text-secondary);
+        font-weight: 500; cursor: pointer; transition: all 0.3s ease; border-bottom: 2px solid transparent;
+        margin-bottom: -2px; font-size: 0.9375rem; white-space: nowrap;
+    }
+    .tab-button:hover { color: var(--accent-light); }
+    .tab-button.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .section-title { font-family: 'IBM Plex Mono', monospace; }
+
+    .legend-list { list-style: none; padding: 0; margin: 0; }
+    .legend-list li { padding: 0.4rem 0; border-bottom: 1px dashed rgba(44, 74, 102, 0.35); display: flex; gap: 0.5rem; align-items: baseline; }
+    .legend-list li:last-child { border-bottom: none; }
+    .legend-list .term { font-family: 'JetBrains Mono', monospace; color: var(--accent-light); font-weight: 600; min-width: 2.5rem; }
+
+    .diagram-wrap {
+        background: rgba(15, 23, 42, 0.55);
+        border: 1px solid rgba(44, 74, 102, 0.4);
+        border-radius: 2px;
+        padding: 1.25rem;
+    }
+    .diagram-wrap svg { width: 100%; height: auto; display: block; }
+    .diagram-caption { color: var(--text-tertiary); font-size: 0.75rem; text-align: center; margin-top: 0.5rem; letter-spacing: 0.03em; }
+
+    .anchor-offset { scroll-margin-top: 90px; }
+
+    @media (max-width: 768px) {
+        .card { padding: 1.25rem; }
+        h1, .text-4xl { font-size: 1.875rem !important; line-height: 2.25rem !important; }
+        h2, .text-xl { font-size: 1.125rem !important; line-height: 1.75rem !important; }
+        .tabs-container { flex-wrap: wrap; gap: 0.25rem; }
+        .tab-button { padding: 0.5rem 1rem; font-size: 0.875rem; }
+    }
+    @media (max-width: 480px) {
+        main.mx-auto.max-w-4xl { padding: 0.75rem; }
+        .card { padding: 1rem; margin-bottom: 1rem; }
+        h1, .text-4xl { font-size: 1.5rem !important; line-height: 2rem !important; }
+        .result-table { font-size: 0.7rem; }
+        .result-table th, .result-table td { padding: 0.5rem 0.4rem; }
+    }
+</style>
+</head>
+<body>
+<div class="content-wrapper">
+    <nav class="module-nav" aria-label="Logótipo">
+        <div class="nav-wrap">
+            <div class="nav-wordmark">IFC<span>///</span>VIEWER</div>
+        </div>
+    </nav>
+
+    <main class="mx-auto max-w-4xl px-4 py-16">
+        <header class="header-gradient mb-12 animate-fade-in-up">
+            <h1 class="text-4xl font-bold text-white mb-2">
+                <i class="fas fa-thermometer-half text-blue-400 mr-3" style="color:var(--accent-light)"></i>
+                Teoria da Dilatação Térmica
+            </h1>
+            <p class="text-slate-400 text-lg">Fundamentos, fórmulas e compensação de dilatações em tubagens</p>
+            <div class="flex gap-2 mt-4 flex-wrap">
+                <span class="badge badge-blue"><i class="fas fa-book mr-1"></i> Conteúdo Teórico</span>
+                <span class="badge badge-blue"><i class="fas fa-square-root-alt mr-1"></i> Fórmulas de Referência</span>
+                <span class="badge badge-blue"><i class="fas fa-table mr-1"></i> Tabelas de Materiais</span>
+            </div>
+        </header>
+
+        <div class="card p-6 mb-8 animate-fade-in-up">
+            <div class="tabs-container">
+                <button class="tab-button active" data-tab="tab-linear"><i class="fas fa-ruler mr-2"></i>1. Dilatação Linear</button>
+                <button class="tab-button" data-tab="tab-braco"><i class="fas fa-shoe-prints mr-2"></i>2.1 Braço de Dilatação</button>
+                <button class="tab-button" data-tab="tab-lira"><i class="fas fa-water mr-2"></i>2.2 Lira de Dilatação</button>
+            </div>
+
+            <!-- ================= 1. DILATAÇÃO TÉRMICA LINEAR ================= -->
+            <div id="tab-linear" class="tab-content active pt-8 anchor-offset">
+                <section class="card p-6 mb-8">
+                    <h2 class="text-xl font-bold text-white mb-4 flex items-center section-title">
+                        <span class="badge badge-blue mr-3">1</span>Dilatação Térmica Linear
+                    </h2>
+
+                    <div class="info-box mb-6">
+                        <strong class="text-white">Definição:</strong> Dilatação térmica de um objeto é a dilatação em uma das suas dimensões, provocada pela variação da temperatura.
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="diagram-wrap">
+                            <svg viewBox="0 0 480 210" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <marker id="arrL" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+                                        <path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path>
+                                    </marker>
+                                    <marker id="arrR" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse">
+                                        <path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path>
+                                    </marker>
+                                </defs>
+                                <polygon points="30,60 60,50 60,70" fill="var(--pipe)"></polygon>
+                                <rect x="60" y="50" width="200" height="20" fill="var(--pipe)"></rect>
+                                <rect x="260" y="50" width="80" height="20" fill="none" stroke="var(--text-secondary)" stroke-dasharray="3,3"></rect>
+                                <line x1="260" y1="35" x2="260" y2="90" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
+                                <line x1="340" y1="35" x2="340" y2="90" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
+                                <line x1="262" y1="30" x2="338" y2="30" stroke="var(--accent-light)" stroke-width="1.4" marker-start="url(#arrL)" marker-end="url(#arrR)"></line>
+                                <text x="300" y="20" text-anchor="middle" fill="var(--accent-light)" font-size="14" font-family="JetBrains Mono, monospace">ΔL</text>
+
+                                <line x1="30" y1="100" x2="260" y2="100" stroke="var(--text-secondary)" stroke-width="1.4" marker-start="url(#arrL)" marker-end="url(#arrR)"></line>
+                                <line x1="30" y1="80" x2="30" y2="105" stroke="var(--text-tertiary)" stroke-width="1"></line>
+                                <line x1="260" y1="80" x2="260" y2="105" stroke="var(--text-tertiary)" stroke-width="1"></line>
+                                <text x="145" y="118" text-anchor="middle" fill="var(--text-secondary)" font-size="14" font-family="JetBrains Mono, monospace">L₀</text>
+
+                                <line x1="30" y1="140" x2="340" y2="140" stroke="var(--text-secondary)" stroke-width="1.4" marker-start="url(#arrL)" marker-end="url(#arrR)"></line>
+                                <line x1="30" y1="105" x2="30" y2="145" stroke="var(--text-tertiary)" stroke-width="1"></line>
+                                <line x1="340" y1="90" x2="340" y2="145" stroke="var(--text-tertiary)" stroke-width="1"></line>
+                                <text x="185" y="160" text-anchor="middle" fill="var(--text-secondary)" font-size="14" font-family="JetBrains Mono, monospace">L</text>
+                            </svg>
+                            <p class="diagram-caption">Dilatação linear: comprimento inicial L₀ e comprimento final L após variação térmica ΔT</p>
+                        </div>
+
+                        <div class="flex flex-col gap-4 justify-center">
+                            <div class="formula-box text-center" id="formula-linear"></div>
+                            <div>
+                                <p class="label-underline text-white font-semibold mb-2 underline">Legenda:</p>
+                                <ul class="legend-list">
+                                    <li><span class="term">L₀</span><span>Comprimento inicial do objeto, na temperatura T0 (m)</span></li>
+                                    <li><span class="term">L</span><span>Comprimento final do objeto, na temperatura T (m)</span></li>
+                                    <li><span class="term">ΔL</span><span>Dilatação linear [L−L₀] (mm)</span></li>
+                                    <li><span class="term">ΔT</span><span>Variação da temperatura do objeto, em °C (T−T0)</span></li>
+                                    <li><span class="term">α</span><span>Coeficiente de dilatação linear (mm/m·K)</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="text-lg font-semibold text-white mb-3"><i class="fas fa-table mr-2" style="color:var(--accent-light)"></i>Coeficiente de Dilatação Linear por Material</h3>
+                    <div class="overflow-x-auto">
+                        <table class="result-table">
+                            <thead>
+                                <tr><th>Material</th><th>α (mm/m·K)</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>PVC-C</td><td class="mono-font">0,070</td></tr>
+                                <tr><td>PE-X</td><td class="mono-font">0,150</td></tr>
+                                <tr><td>PP-R</td><td class="mono-font">0,150</td></tr>
+                                <tr><td>PB</td><td class="mono-font">0,130</td></tr>
+                                <tr><td>PP-R + Fibra de vidro</td><td class="mono-font">0,035</td></tr>
+                                <tr><td>PE-RT / AL / PE-RT</td><td class="mono-font">0,025</td></tr>
+                                <tr><td>PE-RT</td><td class="mono-font">0,190</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ================= 2.1 BRAÇO DE DILATAÇÃO ================= -->
+            <div id="tab-braco" class="tab-content pt-8 anchor-offset">
+                <section class="card p-6 mb-8">
+                    <h2 class="text-xl font-bold text-white mb-1 flex items-center section-title">
+                        <span class="badge badge-blue mr-3">2</span>Compensação das Dilatações Térmicas
+                    </h2>
+                    <p class="text-slate-400 mb-6 ml-1">2.1 — Braço de dilatação</p>
+
+                    <div class="diagram-wrap mb-6">
+                        <svg viewBox="0 0 620 340" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <marker id="a1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path></marker>
+                                <marker id="a2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path></marker>
+                                <pattern id="hatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                                    <line x1="0" y1="0" x2="0" y2="8" stroke="var(--text-tertiary)" stroke-width="2"></line>
+                                </pattern>
+                            </defs>
+
+                            <!-- Dimensão L -->
+                            <line x1="20" y1="30" x2="330" y2="30" stroke="var(--text-secondary)" stroke-width="1.2" marker-start="url(#a1)" marker-end="url(#a2)"></line>
+                            <text x="175" y="20" text-anchor="middle" fill="var(--text-secondary)" font-size="14" font-family="JetBrains Mono, monospace">L</text>
+
+                            <!-- Suportes FP e SP topo -->
+                            <rect x="45" y="42" width="26" height="8" fill="url(#hatch)"></rect>
+                            <line x1="58" y1="50" x2="58" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
+                            <rect x="52" y="95" width="12" height="10" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"></rect>
+
+                            <rect x="175" y="42" width="26" height="8" fill="url(#hatch)"></rect>
+                            <line x1="188" y1="50" x2="188" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
+                            <rect x="182" y="95" width="12" height="10" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"></rect>
+
+                            <!-- Tubo horizontal -->
+                            <rect x="20" y="100" width="290" height="16" fill="var(--pipe)"></rect>
+                            <line x1="130" y1="100" x2="122" y2="116" stroke="var(--primary)" stroke-width="2"></line>
+                            <line x1="140" y1="100" x2="132" y2="116" stroke="var(--primary)" stroke-width="2"></line>
+
+                            <!-- Curva / cotovelo -->
+                            <rect x="294" y="100" width="60" height="16" fill="var(--pipe)"></rect>
+                            <rect x="338" y="100" width="16" height="90" fill="var(--pipe)"></rect>
+
+                            <!-- ΔL ΔL marcas -->
+                            <line x1="320" y1="60" x2="320" y2="95" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
+                            <line x1="355" y1="60" x2="355" y2="95" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
+                            <line x1="392" y1="60" x2="392" y2="95" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
+                            <line x1="322" y1="55" x2="353" y2="55" stroke="var(--accent-light)" stroke-width="1.2" marker-start="url(#a1)" marker-end="url(#a2)"></line>
+                            <text x="337" y="47" text-anchor="middle" fill="var(--accent-light)" font-size="12" font-family="JetBrains Mono, monospace">ΔL</text>
+                            <line x1="357" y1="55" x2="390" y2="55" stroke="var(--accent-light)" stroke-width="1.2" marker-start="url(#a1)" marker-end="url(#a2)"></line>
+                            <text x="373" y="47" text-anchor="middle" fill="var(--accent-light)" font-size="12" font-family="JetBrains Mono, monospace">ΔL</text>
+
+                            <!-- Tubo vertical descendo -->
+                            <rect x="338" y="100" width="16" height="180" fill="var(--pipe)"></rect>
+
+                            <!-- Suporte inferior FP -->
+                            <rect x="330" y="278" width="32" height="10" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"></rect>
+                            <line x1="362" y1="283" x2="400" y2="283" stroke="var(--text-tertiary)" stroke-width="2"></line>
+                            <rect x="400" y="270" width="8" height="26" fill="url(#hatch)"></rect>
+
+                            <!-- Dimensão Ls -->
+                            <line x1="440" y1="95" x2="440" y2="283" stroke="var(--text-secondary)" stroke-width="1.2" marker-start="url(#a1)" marker-end="url(#a2)"></line>
+                            <text x="452" y="195" fill="var(--text-secondary)" font-size="14" font-family="JetBrains Mono, monospace">L</text>
+                            <text x="458" y="200" fill="var(--text-secondary)" font-size="9" font-family="JetBrains Mono, monospace">s</text>
+
+                            <!-- Labels FP / SP -->
+                            <text x="40" y="130" fill="var(--text-secondary)" font-size="12" font-weight="600">FP</text>
+                            <text x="170" y="130" fill="var(--text-secondary)" font-size="12" font-weight="600">SP</text>
+                            <text x="316" y="298" fill="var(--text-secondary)" font-size="12" font-weight="600">FP</text>
+
+                            <text x="20" y="325" fill="var(--text-tertiary)" font-size="11" font-weight="600">FP: Fixed point</text>
+                            <text x="20" y="338" fill="var(--text-tertiary)" font-size="11" font-weight="600">SP: Slide point</text>
+                        </svg>
+                        <p class="diagram-caption">Braço de dilatação: pontos fixos (FP), pontos deslizantes (SP) e desenvolvimento do braço elástico Ls</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="formula-box text-center" id="formula-braco"></div>
+                        <div>
+                            <p class="label-underline text-white font-semibold mb-2 underline">Legenda:</p>
+                            <ul class="legend-list">
+                                <li><span class="term">Ls</span><span>Comprimento do braço de dilatação (mm)</span></li>
+                                <li><span class="term">de</span><span>Diâmetro exterior do tubo (mm)</span></li>
+                                <li><span class="term">ΔL</span><span>Variação do comprimento (mm)</span></li>
+                                <li><span class="term">C</span><span>Constante do material</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h3 class="text-lg font-semibold text-white mb-3"><i class="fas fa-table mr-2" style="color:var(--accent-light)"></i>Constante do Material (C)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="result-table">
+                            <thead>
+                                <tr><th>Material</th><th>C</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>PVC-C</td><td class="mono-font">34</td></tr>
+                                <tr><td>PE-X</td><td class="mono-font">12</td></tr>
+                                <tr><td>PP-R</td><td class="mono-font">20</td></tr>
+                                <tr><td>PB</td><td class="mono-font">10</td></tr>
+                                <tr><td>PP-R + Fibra de vidro</td><td class="mono-font">20</td></tr>
+                                <tr><td>PE-RT / AL / PE-RT</td><td class="mono-font">30</td></tr>
+                                <tr><td>PE-RT</td><td class="mono-font">14</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-6">
+                        <a href="HELIROMA-CALC.html" class="btn-link inline-flex items-center gap-2" style="color:var(--accent-light); text-decoration:none; font-weight:600; font-size:0.9rem;">
+                            <i class="fas fa-calculator"></i> Ir para a Calculadora de Dilatação Térmica
+                        </a>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ================= 2.2 LIRA DE DILATAÇÃO ================= -->
+            <div id="tab-lira" class="tab-content pt-8 anchor-offset">
+                <section class="card p-6 mb-8">
+                    <h2 class="text-xl font-bold text-white mb-1 flex items-center section-title">
+                        <span class="badge badge-blue mr-3">2</span>Compensação das Dilatações Térmicas
+                    </h2>
+                    <p class="text-slate-400 mb-6 ml-1">2.2 — Lira de dilatação</p>
+
+                    <div class="info-box mb-6">
+                        <strong class="text-white">Nota:</strong> O funcionamento das liras de dilatação é equivalente a um duplo braço de dilatação. A largura da curva — Lc — tem que ser no mínimo 2 vezes o diâmetro do tubo. Para calcular o comprimento — Ls — pode-se utilizar a fórmula do ponto anterior (2.1).
+                    </div>
+
+                    <div class="diagram-wrap mb-6">
+                        <svg viewBox="0 0 760 380" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <marker id="b1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path></marker>
+                                <marker id="b2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path></marker>
+                                <pattern id="hatch2" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                                    <line x1="0" y1="0" x2="0" y2="8" stroke="var(--text-tertiary)" stroke-width="2"></line>
+                                </pattern>
+                            </defs>
+
+                            <!-- Dimensões L, Lc, L -->
+                            <line x1="20" y1="25" x2="240" y2="25" stroke="var(--text-secondary)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
+                            <text x="130" y="17" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-family="JetBrains Mono, monospace">L</text>
+
+                            <line x1="240" y1="45" x2="520" y2="45" stroke="var(--text-secondary)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
+                            <text x="380" y="37" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-family="JetBrains Mono, monospace">Lc</text>
+
+                            <line x1="520" y1="25" x2="740" y2="25" stroke="var(--text-secondary)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
+                            <text x="630" y="17" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-family="JetBrains Mono, monospace">L</text>
+
+                            <!-- Suportes topo -->
+                            <g font-size="11" font-weight="600" fill="var(--text-secondary)">
+                                <rect x="30" y="58" width="24" height="7" fill="url(#hatch2)"></rect>
+                                <line x1="42" y1="65" x2="42" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
+                                <rect x="36" y="95" width="12" height="9" fill="none" stroke="var(--text-secondary)" stroke-width="1.4"></rect>
+                                <text x="26" y="122">FP</text>
+
+                                <rect x="140" y="58" width="24" height="7" fill="url(#hatch2)"></rect>
+                                <line x1="152" y1="65" x2="152" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
+                                <rect x="146" y="95" width="12" height="9" fill="none" stroke="var(--text-secondary)" stroke-width="1.4"></rect>
+                                <text x="136" y="122">SP</text>
+
+                                <rect x="596" y="58" width="24" height="7" fill="url(#hatch2)"></rect>
+                                <line x1="608" y1="65" x2="608" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
+                                <rect x="602" y="95" width="12" height="9" fill="none" stroke="var(--text-secondary)" stroke-width="1.4"></rect>
+                                <text x="595" y="122">SP</text>
+
+                                <rect x="706" y="58" width="24" height="7" fill="url(#hatch2)"></rect>
+                                <line x1="718" y1="65" x2="718" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
+                                <rect x="712" y="95" width="12" height="9" fill="none" stroke="var(--text-secondary)" stroke-width="1.4"></rect>
+                                <text x="700" y="122">FP</text>
+                            </g>
+
+                            <!-- Tubo horizontal esquerda / direita -->
+                            <rect x="20" y="108" width="220" height="15" fill="var(--pipe)"></rect>
+                            <rect x="500" y="108" width="220" height="15" fill="var(--pipe)"></rect>
+                            <line x1="105" y1="108" x2="97" y2="123" stroke="var(--primary)" stroke-width="2"></line>
+                            <line x1="115" y1="108" x2="107" y2="123" stroke="var(--primary)" stroke-width="2"></line>
+                            <line x1="635" y1="108" x2="627" y2="123" stroke="var(--primary)" stroke-width="2"></line>
+                            <line x1="645" y1="108" x2="637" y2="123" stroke="var(--primary)" stroke-width="2"></line>
+
+                            <!-- curvas descendo -->
+                            <rect x="240" y="108" width="55" height="15" fill="var(--pipe)"></rect>
+                            <rect x="280" y="108" width="15" height="70" fill="var(--pipe)"></rect>
+
+                            <rect x="465" y="108" width="55" height="15" fill="var(--pipe)"></rect>
+                            <rect x="465" y="108" width="15" height="70" fill="var(--pipe)"></rect>
+
+                            <!-- ΔL marks left -->
+                            <line x1="258" y1="70" x2="258" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
+                            <line x1="288" y1="70" x2="288" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
+                            <line x1="318" y1="70" x2="318" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
+                            <line x1="260" y1="65" x2="286" y2="65" stroke="var(--accent-light)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
+                            <text x="273" y="58" text-anchor="middle" fill="var(--accent-light)" font-size="11" font-family="JetBrains Mono, monospace">ΔL</text>
+                            <line x1="290" y1="65" x2="316" y2="65" stroke="var(--accent-light)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
+                            <text x="303" y="58" text-anchor="middle" fill="var(--accent-light)" font-size="11" font-family="JetBrains Mono, monospace">ΔL</text>
+
+                            <!-- ΔL marks right -->
+                            <line x1="440" y1="70" x2="440" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
+                            <line x1="470" y1="70" x2="470" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
+                            <line x1="500" y1="70" x2="500" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
+                            <line x1="442" y1="65" x2="468" y2="65" stroke="var(--accent-light)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
+                            <text x="455" y="58" text-anchor="middle" fill="var(--accent-light)" font-size="11" font-family="JetBrains Mono, monospace">ΔL</text>
+                            <line x1="472" y1="65" x2="498" y2="65" stroke="var(--accent-light)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
+                            <text x="485" y="58" text-anchor="middle" fill="var(--accent-light)" font-size="11" font-family="JetBrains Mono, monospace">ΔL</text>
+
+                            <!-- Lms dimension -->
+                            <line x1="295" y1="145" x2="465" y2="145" stroke="var(--text-secondary)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
+                            <text x="380" y="138" text-anchor="middle" fill="var(--text-secondary)" font-size="12" font-family="JetBrains Mono, monospace">Lms</text>
+
+                            <!-- Vertical drops to U -->
+                            <rect x="280" y="178" width="15" height="150" fill="var(--pipe)"></rect>
+                            <rect x="465" y="178" width="15" height="150" fill="var(--pipe)"></rect>
+
+                            <!-- Base U -->
+                            <rect x="280" y="313" width="200" height="15" fill="var(--pipe)"></rect>
+
+                            <!-- Suporte central inferior FP -->
+                            <rect x="364" y="322" width="32" height="9" fill="none" stroke="var(--text-secondary)" stroke-width="1.4"></rect>
+                            <line x1="380" y1="331" x2="380" y2="358" stroke="var(--text-tertiary)" stroke-width="2"></line>
+                            <rect x="368" y="358" width="24" height="8" fill="url(#hatch2)"></rect>
+                            <text x="368" y="345" fill="var(--text-secondary)" font-size="11" font-weight="600">FP</text>
+
+                            <!-- Dimensão Ls -->
+                            <line x1="540" y1="103" x2="540" y2="322" stroke="var(--text-secondary)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
+                            <text x="552" y="215" fill="var(--text-secondary)" font-size="13" font-family="JetBrains Mono, monospace">L</text>
+                            <text x="558" y="220" fill="var(--text-secondary)" font-size="8" font-family="JetBrains Mono, monospace">s</text>
+
+                            <text x="20" y="355" fill="var(--text-tertiary)" font-size="11" font-weight="600">FP: Fixed point</text>
+                            <text x="20" y="368" fill="var(--text-tertiary)" font-size="11" font-weight="600">SP: Slide point</text>
+                        </svg>
+                        <p class="diagram-caption">Lira de dilatação: equivalente a um duplo braço, com largura mínima Lc ≥ 2×de</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                        <div class="formula-box text-center" id="formula-lira"></div>
+                        <div>
+                            <p class="label-underline text-white font-semibold mb-2 underline">Legenda:</p>
+                            <ul class="legend-list">
+                                <li><span class="term">Ls</span><span>Comprimento do braço (mm)</span></li>
+                                <li><span class="term">Lc</span><span>Largura do braço (mm)</span></li>
+                                <li><span class="term">d</span><span>Diâmetro exterior do tubo (mm)</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mt-2">
+                        <a href="HELIROMA-CALC.html" class="btn-link inline-flex items-center gap-2" style="color:var(--accent-light); text-decoration:none; font-weight:600; font-size:0.9rem;">
+                            <i class="fas fa-calculator"></i> Ir para a Calculadora de Dilatação Térmica
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <footer class="text-center text-slate-500 text-xs py-8 border-t border-slate-800">
+            <p>© 2024 Teoria da Dilatação Térmica | Braços e Liras de Dilatação</p>
+            <p class="mt-2">Conteúdo técnico de referência para dimensionamento de sistemas de tubagem sujeitos a variações térmicas</p>
+        </footer>
+    </main>
+</div>
+
+<script>
+    function setupTabs() {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabName = button.dataset.tab;
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                button.classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+            });
+        });
+    }
+
+    function renderFormulas() {
+        katex.render("\\Delta L = L_{final} - L_0 = L_0 \\times \\alpha \\times \\Delta T", document.getElementById('formula-linear'), { throwOnError: false, displayMode: true });
+        katex.render("L_S = C \\times \\sqrt{d_e \\times \\Delta L}", document.getElementById('formula-braco'), { throwOnError: false, displayMode: true });
+        katex.render("L_C = 2 \\times \\Delta L + L_{ms}", document.getElementById('formula-lira'), { throwOnError: false, displayMode: true });
+    }
+
+    setupTabs();
+    renderFormulas();
+</script>
+</body>
+</html>
