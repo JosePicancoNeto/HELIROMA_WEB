@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="pt" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busca de Resistência Química - PP-R</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- html2pdf para exportação PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+        * {
+            font-family: 'IBM Plex Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        .mono-font {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        /* ====== PALETA TÉCNICA (mesmo sistema das outras páginas) ====== */
+        :root {
+            --ink-900:#0a1f33;
+            --ink-800:#0f2a47;
+            --ink-700:#15355a;
+            --paper:#edeff2;
+            --paper-dim:#a9b7c6;
+            --line:#2c4a66;
+            --accent:#ff8a00;
+            --accent-dim:#b45f00;
+            --ok:#35d0a0;
+            --warn:#f0b429;
+            --warn-dim:#a87a0f;
+            --danger:#ff5a5a;
+            --danger-dim:#b83a3a;
+            --radius:2px;
+
+            /* aliases para o que o JS/HTML deste ficheiro já espera */
+            --primary: var(--ink-900);
+            --primary-light: var(--ink-800);
+            --primary-lighter: var(--ink-700);
+            --border: var(--line);
+            --bg-subtle: var(--ink-900);
+            --text-primary: var(--paper);
+            --text-secondary: var(--paper-dim);
+            --text-tertiary: var(--paper-dim);
+            --accent-light: var(--accent);
+            --accent-dark: var(--accent-dim);
+            --success: var(--ok);
+            --warning: var(--warn);
+        }
+
+        /* ====== BACKGROUND TÉCNICO (grelha de prancha, igual às outras páginas) ====== */
+        body {
+            margin: 0;
+            background:
+                linear-gradient(var(--line) 1px, transparent 1px) 0 0/40px 40px,
+                linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/40px 40px,
+                var(--ink-900);
+            background-blend-mode: overlay, overlay, normal;
+            color: var(--paper);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body.nav-open { overflow: hidden; }
+
+        body::before {
+            content: none;
+        }
+
+        ::selection{ background:var(--accent); color:var(--ink-900); }
+
+        :focus-visible{
+            outline:2px solid var(--accent);
+            outline-offset:3px;
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ====== ANIMAÇÕES ====== */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInFromLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .animate-slide-left {
+            animation: slideInFromLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ====== CARDS (plate no estilo prancha CAD) ====== */
+        .card {
+            background: rgba(15, 42, 71, 0.4);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent-dim);
+            box-shadow: 0 0 20px rgba(255, 138, 0, 0.08);
+        }
+
+        /* ====== INPUT FIELDS ====== */
+        input[type="text"],
+        input[type="number"],
+        select {
+            background-color: var(--ink-800) !important;
+            border-color: var(--line) !important;
+            color: var(--paper) !important;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+            border: 1px solid var(--line) !important;
+            padding: 0.75rem !important;
+            border-radius: var(--radius) !important;
+            box-sizing: border-box !important;
+            font-family: 'IBM Plex Sans', sans-serif !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        /* Evita que o dropdown de químicos (nomes longos) alargue além da coluna
+           e sobreponha o filtro seguinte; corta o texto excedente com reticências */
+        select {
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        /* Colunas da grid de filtros: min-width:0 impede que o conteúdo
+           intrínseco (ex.: select com opções longas) force a coluna a alargar
+           além do espaço disponível, o que causava a sobreposição visual */
+        .grid > div {
+            min-width: 0;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none !important;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 3px rgba(255, 138, 0, 0.15) !important;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--paper-dim) !important;
+        }
+
+        /* ====== BOTÕES ====== */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--ink-900);
+            border: 1px solid var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dim);
+            border-color: var(--accent-dim);
+        }
+
+        .btn-secondary {
+            background: none;
+            color: var(--paper-dim);
+            border: 1px solid var(--line);
+        }
+
+        .btn-secondary:hover {
+            color: var(--paper);
+            border-color: var(--accent-dim);
+        }
+
+        /* ====== BADGES DE RESISTÊNCIA ====== */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.875rem;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .badge-success {
+            background: rgba(53, 208, 160, 0.12);
+            color: var(--ok);
+            border: 1px solid rgba(53, 208, 160, 0.35);
+        }
+
+        .badge-warning {
+            background: rgba(240, 180, 41, 0.12);
+            color: var(--warn);
+            border: 1px solid rgba(240, 180, 41, 0.35);
+        }
+
+        .badge-danger {
+            background: rgba(255, 90, 90, 0.12);
+            color: var(--danger);
+            border: 1px solid rgba(255, 90, 90, 0.35);
+        }
+
+        .badge-neutral {
+            background: rgba(169, 183, 198, 0.1);
+            color: var(--paper-dim);
+            border: 1px solid var(--line);
+        }
+
+        /* ====== TABELA ====== */
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: transparent;
+        }
+
+        thead {
+            background: var(--ink-800);
+            border-bottom: 1px solid var(--line);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--paper-dim);
+            font-size: 0.8rem;
+            font-family: 'IBM Plex Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        td {
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--line);
+            color: var(--paper);
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 138, 0, 0.04);
+            transition: background 0.15s ease;
+        }
+
+        /* ====== CABEÇALHO CLICÁVEL (ordenar por categoria) ====== */
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s ease;
+        }
+
+        th.sortable:hover {
+            color: var(--accent-light) !important;
+        }
+
+        th.sortable .sort-icon {
+            display: inline-block;
+            margin-left: 0.35rem;
+            font-size: 0.7rem;
+            color: var(--accent);
+            transition: transform 0.15s ease;
+        }
+
+        /* ====== LINHA DIVISÓRIA DE GRUPO (agrupamento por categoria) ====== */
+        tr.category-group-row td {
+            background: rgba(255, 138, 0, 0.08);
+            border-bottom: 1px solid var(--accent-dim);
+            border-top: 1px solid var(--accent-dim);
+            color: var(--accent-light);
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.6rem 1rem;
+        }
+
+        tr.category-group-row td .group-count {
+            color: var(--paper-dim);
+            font-weight: 500;
+            text-transform: none;
+            letter-spacing: normal;
+            margin-left: 0.5rem;
+        }
+
+        /* ====== TOAST ====== */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--ink-800);
+            color: var(--paper);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--ok);
+            border-radius: var(--radius);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.9em;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            animation: slideInUp 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        @keyframes slideInUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* ====== HEADER interno da página (título + descrição) ====== */
+        .header {
+            background: rgba(15, 42, 71, 0.4);
+            border-bottom: 1px solid var(--line);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--paper);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* ====== STATS (title-block, como uma prancha CAD) ====== */
+        .stat-box {
+            background: rgba(15, 42, 71, 0.3);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--paper-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 0.5rem;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        /* ====== RESULTADO VAZIO ====== */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--paper-dim);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        /* ====== NAVBAR DE MÓDULOS (idêntica às outras páginas) ====== */
+        .module-nav{
+            border-bottom:1px solid var(--line);
+            position:sticky;
+            top:0;
+            z-index:50;
+        }
+        /* Blur/translúcido no ::before (não no próprio .module-nav): um
+           backdrop-filter no ancestral cria um novo containing block para
+           descendentes position:fixed, o que confinaria o overlay do menu
+           mobile à faixa do cabeçalho em vez de cobrir o ecrã. */
+        .module-nav::before{
+            content:"";
+            position:absolute;
+            inset:0;
+            z-index:-1;
+            background:rgba(10,31,51,0.6);
+            backdrop-filter:blur(6px);
+        }
+        .module-nav .nav-wrap{
+            max-width:1040px;
+            margin:0 auto;
+            padding:18px 24px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:16px;
+        }
+        .module-nav .nav-wordmark{
+            font-family:'IBM Plex Mono', monospace;
+            font-weight:600;
+            letter-spacing:0.02em;
+            font-size:15px;
+            color:var(--paper);
+            white-space:nowrap;
+        }
+        .module-nav .nav-wordmark span{ color:var(--accent); }
+        .module-nav .nav-tabs{
+            display:flex;
+            gap:6px;
+            font-family:'IBM Plex Mono', monospace;
+            font-size:12px;
+            letter-spacing:0.04em;
+        }
+        .module-nav .nav-tab{
+            text-decoration:none;
+            color:var(--paper-dim);
+            border:1px solid var(--line);
+            padding:7px 14px;
+            border-radius:var(--radius);
+            transition:color .15s ease, border-color .15s ease, background .15s ease;
+        }
+        .module-nav .nav-tab:hover{
+            color:var(--paper);
+            border-color:var(--accent-dim);
+        }
+        .module-nav .nav-tab.is-active{
+            color:var(--ink-900);
+            background:var(--accent);
+            border-color:var(--accent);
+        }
+        .module-nav .nav-eyebrow{
+            font-family:'IBM Plex Mono', monospace;
+            font-size:11px;
+            letter-spacing:0.14em;
+            color:var(--paper-dim);
+            border:1px solid var(--line);
+            padding:5px 10px;
+            border-radius:var(--radius);
+            white-space:nowrap;
+        }
+
+        /* Ícone de menu — só visível em mobile (ver media query abaixo). */
+        #navMenuToggle{
+            display:none;
+            width:36px; height:36px;
+            align-items:center;
+            justify-content:center;
+            background:transparent;
+            border:1px solid var(--line);
+            border-radius:var(--radius);
+            color:var(--paper);
+            font-size:16px;
+            line-height:1;
+            cursor:pointer;
+            touch-action:manipulation;
+        }
+        #navMenuToggle:hover{ border-color:var(--accent-dim); }
+
+        .nav-close{ display:none; }
+
+        @media (max-width:640px){
+            .module-nav .nav-wrap{
+                display:grid;
+                grid-template-columns:1fr auto 1fr;
+                align-items:center;
+            }
+            .module-nav .nav-wordmark{ grid-column:1; justify-self:start; }
+            #navMenuToggle{ grid-column:2; display:inline-flex; justify-self:center; }
+            .module-nav .nav-eyebrow{ grid-column:3; justify-self:end; }
+
+            .module-nav .nav-tabs{
+                display:none;
+                position:fixed;
+                inset:0;
+                z-index:1000;
+                flex-direction:column;
+                align-items:center;
+                justify-content:center;
+                gap:10px;
+                padding:24px;
+                background:var(--ink-900);
+                overflow-y:auto;
+            }
+            .module-nav .nav-tabs.is-open{ display:flex; }
+            .module-nav .nav-tab{
+                width:100%;
+                max-width:320px;
+                text-align:center;
+                padding:16px 14px;
+                font-size:14px;
+            }
+            .nav-close{
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                position:absolute;
+                top:16px; right:16px;
+                width:40px; height:40px;
+                background:transparent;
+                border:1px solid var(--line);
+                border-radius:var(--radius);
+                color:var(--paper);
+                font-size:20px;
+                line-height:1;
+                cursor:pointer;
+                touch-action:manipulation;
+            }
+            .nav-close:hover{ border-color:var(--accent-dim); }
+        }
+
+        @media (prefers-reduced-motion: reduce){
+            html{ scroll-behavior:auto; }
+        }
+        /* ====== RELATÓRIO DE IMPRESSÃO (PDF a preto e branco) ====== */
+        #printReport {
+            display: none;
+        }
+
+        @media print {
+            /* Esconde toda a interface normal (navbar, filtros, cards coloridos) */
+            body > *:not(#printReport) {
+                display: none !important;
+            }
+
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+
+            #printReport {
+                display: block !important;
+                background: #ffffff;
+                color: #000000;
+                font-family: Arial, Helvetica, sans-serif;
+                padding: 0;
+            }
+
+            #printReport h1 {
+                font-size: 20px;
+                font-weight: 700;
+                margin: 0 0 4px 0;
+                color: #000000;
+            }
+
+            #printReport .print-meta {
+                font-size: 11px;
+                color: #333333;
+                margin-bottom: 4px;
+            }
+
+            #printReport .print-filters {
+                font-size: 11px;
+                color: #333333;
+                margin-bottom: 14px;
+            }
+
+            #printReport h2 {
+                font-size: 13px;
+                font-weight: 700;
+                margin: 18px 0 6px 0;
+                color: #000000;
+                text-transform: uppercase;
+            }
+
+            #printReport table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 8px;
+            }
+
+            #printReport th,
+            #printReport td {
+                border: 1px solid #000000;
+                padding: 6px 8px;
+                font-size: 11px;
+                text-align: left;
+                color: #000000;
+            }
+
+            #printReport th {
+                font-weight: 700;
+                background: #f0f0f0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            #printReport .print-group-row td {
+                background: #e5e5e5 !important;
+                font-weight: 700;
+                text-transform: uppercase;
+                font-size: 10px;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            #printReport .print-summary {
+                margin-top: 14px;
+                font-size: 11px;
+                color: #000000;
+            }
+
+            @page {
+                margin: 15mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="module-nav" aria-label="Navegação entre módulos">
+        <div class="nav-wrap">
+            <div class="nav-wordmark">IFC<span>///</span>VIEWER</div>
+            <button type="button" id="navMenuToggle" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="navTabs">☰</button>
+            <div class="nav-tabs" id="navTabs">
+                <button type="button" class="nav-close" id="navClose" aria-label="Fechar menu">×</button>
+                <a class="nav-tab" href="index.html">Visualizador IFC</a>
+                <a class="nav-tab" href="HELIROMA-CALC.html">Calculadora PP-R</a>
+                <a class="nav-tab" href="COLETOR-PESO.html">Calculadora de Peso</a>
+                <a class="nav-tab is-active" href="RESISTENCIA-QUIMICA-BUSCA.html">Resistência Química</a>
+            </div>
+            <div class="nav-eyebrow">QUÍMICA</div>
+        </div>
+    </nav>
+    <script>
+    (function initMobileNav(){
+        const toggle = document.getElementById('navMenuToggle');
+        const nav = document.getElementById('navTabs');
+        const closeBtn = document.getElementById('navClose');
+        if (!toggle || !nav) return;
+
+        function setOpen(open){
+            nav.classList.toggle('is-open', open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            document.body.classList.toggle('nav-open', open);
+        }
+
+        toggle.addEventListener('click', () => setOpen(!nav.classList.contains('is-open')));
+        if (closeBtn) closeBtn.addEventListener('click', () => setOpen(false));
+
+        nav.addEventListener('click', (e) => {
+            if (e.target.closest('a') || e.target === nav) setOpen(false);
+        });
+
+        window.addEventListener('resize', () => {
+            if (window.matchMedia('(max-width:640px)').matches) return;
+            setOpen(false);
+        });
+    })();
+    </script>
+
+    <div class="content-wrapper">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="max-w-6xl mx-auto px-4 animate-fade-in-up">
+                <div class="logo">
+                    <i class="fas fa-flask-vial" style="color: #35d0a0;"></i>
+                    <span>Resistência Química PP-R</span>
+                </div>
+                <p style="color: var(--text-tertiary); margin-top: 0.5rem; font-size: 0.95rem;">
+                    Busca interativa de compatibilidade química com tubagens de Polipropileno Random
+                </p>
+            </div>
+        </div>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <div class="max-w-6xl mx-auto px-4 pb-8">
+            <!-- FILTROS -->
+            <div class="card p-6 mb-6 animate-fade-in-up">
+                <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--accent-light);">
+                    <i class="fas fa-sliders-h"></i> Filtros de Busca
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Busca por nome -->
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary); font-weight: 500;">
+                            Pesquisar Químico
+                        </label>
+                        <select id="searchChemical">
+                            <option value="">Todos os químicos</option>
+                        </select>
+                    </div>
+
+                    <!-- Temperatura -->
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary); font-weight: 500;">
+                            Temperatura
+                        </label>
+                        <select id="filterTemp">
+                            <option value="">Todas</option>
+                            <option value="20">20°C</option>
+                            <option value="60">60°C</option>
+                        </select>
+                    </div>
+
+                    <!-- Resistência -->
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; color: var(--text-secondary); font-weight: 500;">
+                            Resistência
+                        </label>
+                        <select id="filterResistance">
+                            <option value="">Todas</option>
+                            <option value="satisfactory">✓ Satisfatória</option>
+                            <option value="limited">□ Limitada</option>
+                            <option value="unsatisfactory">✕ Não Satisfatória</option>
+                        </select>
+                    </div>
+
+                    <!-- Botões -->
+                    <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
+                        <button class="btn btn-primary" onclick="applyFilters()" style="flex: 1;">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetFilters()" title="Limpar filtros">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATS -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 animate-fade-in-up">
+                <div class="stat-box">
+                    <div class="stat-value" id="totalChemicals">0</div>
+                    <div class="stat-label">Químicos Total</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" style="color: #35d0a0;" id="satisfactoryCount">0</div>
+                    <div class="stat-label">Satisfatórios</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" style="color: #f0b429;" id="limitedCount">0</div>
+                    <div class="stat-label">Limitados</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" style="color: #ff5a5a;" id="unsatisfactoryCount">0</div>
+                    <div class="stat-label">Não Satisfatórios</div>
+                </div>
+            </div>
+
+            <!-- TABELA DE RESULTADOS -->
+            <div class="card animate-fade-in-up">
+                <div style="padding: 1.5rem; border-bottom: 1px solid rgba(71, 85, 105, 0.2); display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">
+                        Resultados da Busca
+                    </h3>
+                    <button class="btn btn-secondary" onclick="exportToPDF()">
+                        <i class="fas fa-download"></i> Exportar PDF
+                    </button>
+                </div>
+
+                <div id="resultsContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>Use os filtros acima para buscar químicos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ====================================================================
+        // BASE DE DADOS DE RESISTÊNCIA QUÍMICA
+        // ====================================================================
+        const chemicalData = [
+            // ÁCIDOS
+            { name: 'Acetic acid', concentration: '> 40%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Acetic acid', concentration: '50%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Acetic acid, glacial', concentration: '>96%', temp20: '✓', temp60: '□', category: 'Ácidos' },
+            { name: 'Acetone', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Solventes' },
+            { name: 'Acetonophenone', concentration: '100%', temp20: '✓', temp60: '□', category: 'Solventes' },
+            { name: 'Acrylonitrile', concentration: '100%', temp20: '✓', temp60: '-', category: 'Solventes' },
+            { name: 'Air', concentration: '-', temp20: '✓', temp60: '✓', category: 'Gases' },
+            { name: 'Almond oil', concentration: '-', temp20: '✓', temp60: '-', category: 'Óleos' },
+            { name: 'Amyl acetate', concentration: '100%', temp20: '□', temp60: '-', category: 'Solventes' },
+            { name: 'Amyl alcohol', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Álcoois' },
+            { name: 'Aniline', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Químicos Org.' },
+            { name: 'Apple juice', concentration: '100%', temp20: '✓', temp60: '-', category: 'Alimentos' },
+            { name: 'Aqua regia HCl/HNO3=3/1', concentration: '-', temp20: '✕', temp60: '✕', category: 'Ácidos' },
+
+            // BÁRIO
+            { name: 'Barium carbonate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Barium chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Barium hydroxide', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Bases' },
+            { name: 'Barium sulphate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Benzene', concentration: '100%', temp20: '✓', temp60: '✕', category: 'Solventes' },
+            { name: 'Benzoic acid', concentration: 'Sat.sol', temp20: '□', temp60: '-', category: 'Ácidos' },
+            { name: 'Benzyl alcohol', concentration: '100%', temp20: '✓', temp60: '□', category: 'Álcoois' },
+
+            // CÁLCIO
+            { name: 'Calcium carbonate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Calcium chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Calcium hydroxide', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Bases' },
+            { name: 'Calcium hypochlorite', concentration: 'Sol', temp20: '✓', temp60: '-', category: 'Desinfetantes' },
+            { name: 'Calcium nitrate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Camphor oil', concentration: '-', temp20: '✕', temp60: '✕', category: 'Óleos' },
+            { name: 'Carbon dioxide, dry gas', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Gases' },
+            { name: 'Carbon dioxide, wet', concentration: '-', temp20: '✓', temp60: '✓', category: 'Gases' },
+            { name: 'Carbon disulphide', concentration: '100%', temp20: '✓', temp60: '✕', category: 'Solventes' },
+            { name: 'Carbon tetrachloride', concentration: '100%', temp20: '✕', temp60: '✕', category: 'Solventes' },
+            { name: 'Castor oil', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Óleos' },
+            { name: 'Caustic soda', concentration: '>50%', temp20: '✓', temp60: '□', category: 'Bases' },
+            { name: 'Chlorine, aqueous', concentration: 'Sat.sol', temp20: '✓', temp60: '□', category: 'Gases/Desinfetantes' },
+            { name: 'Chlorine, dry gas', concentration: '100%', temp20: '✕', temp60: '✕', category: 'Gases/Desinfetantes' },
+            { name: 'Chlorine, liquid', concentration: '100%', temp20: '✕', temp60: '✕', category: 'Gases/Desinfetantes' },
+            { name: 'Chloroform', concentration: '100%', temp20: '□', temp60: '✕', category: 'Solventes' },
+            { name: 'Chlorosulphonic acid', concentration: '100%', temp20: '✕', temp60: '✕', category: 'Ácidos' },
+
+            // CITRICO
+            { name: 'Citric acid', concentration: '10%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Coconut oil', concentration: '-', temp20: '✓', temp60: '-', category: 'Óleos' },
+            { name: 'Corn oil', concentration: '-', temp20: '✓', temp60: '□', category: 'Óleos' },
+            { name: 'Cottonseed oil', concentration: '-', temp20: '✓', temp60: '-', category: 'Óleos' },
+            { name: 'Copper III chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '-', category: 'Sais' },
+            { name: 'Copper III nitrate', concentration: '30%', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Copper III sulphate', concentration: 'Sat.sol', temp20: '✓', temp60: '-', category: 'Sais' },
+
+            // DEXTROSE ATÉ DIOXANE
+            { name: 'Dextrose', concentration: 'Sol', temp20: '✓', temp60: '✓', category: 'Açúcares' },
+            { name: 'Diethylene glycol', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Glicóis' },
+            { name: 'Dimethyl formaldehyde', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Solventes' },
+            { name: 'Dioxane', concentration: '100%', temp20: '□', temp60: '□', category: 'Solventes' },
+            { name: 'Distilled water', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Água' },
+
+            // ETANOL ATÉ ETILENO
+            { name: 'Ethanol', concentration: '>95%', temp20: '✓', temp60: '✓', category: 'Álcoois' },
+            { name: 'Ethyl acetate', concentration: '100%', temp20: '□', temp60: '✕', category: 'Solventes' },
+            { name: 'Ethyl chloride', concentration: '100%', temp20: '✕', temp60: '✕', category: 'Solventes' },
+            { name: 'Ethylene glycol', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Glicóis' },
+
+            // FORMALDEÍDO ATÉ FRUTA
+            { name: 'Formaldehyde', concentration: '40%', temp20: '✓', temp60: '-', category: 'Químicos Org.' },
+            { name: 'Formic acid', concentration: '10%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Formic acid', concentration: '100%', temp20: '✓', temp60: '✕', category: 'Ácidos' },
+            { name: 'Fructose', concentration: '-', temp20: '✓', temp60: '✓', category: 'Açúcares' },
+            { name: 'Fruit juice', concentration: '-', temp20: '✓', temp60: '✓', category: 'Alimentos' },
+
+            // GASOLINA ATÉ GLICERINA
+            { name: 'Gasoline, petrol', concentration: '-', temp20: '✕', temp60: '✕', category: 'Combustíveis' },
+            { name: 'Gelatine', concentration: '-', temp20: '✓', temp60: '✓', category: 'Alimentos' },
+            { name: 'Glucose', concentration: '20%', temp20: '✓', temp60: '✓', category: 'Açúcares' },
+            { name: 'Glycerine', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Glicóis' },
+
+            // ÁCIDOS HIDRO
+            { name: 'Hydrochloric acid', concentration: '2-7%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Hydrochloric acid', concentration: '10-20%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Hydrochloric acid', concentration: '30%', temp20: '✓', temp60: '□', category: 'Ácidos' },
+            { name: 'Hydrochloric acid', concentration: '35-36%', temp20: '✓', temp60: '-', category: 'Ácidos' },
+            { name: 'Hydrofluoric acid', concentration: 'Dil.sol', temp20: '✓', temp60: '-', category: 'Ácidos' },
+            { name: 'Hydrofluoric acid', concentration: '40%', temp20: '✓', temp60: '-', category: 'Ácidos' },
+            { name: 'Hydrogen', concentration: '100%', temp20: '✓', temp60: '-', category: 'Gases' },
+            { name: 'Hydrogen chloride, dry gas', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Gases' },
+            { name: 'Hydrogen peroxide', concentration: '>10%', temp20: '✓', temp60: '-', category: 'Oxidantes' },
+            { name: 'Hydrogen peroxide', concentration: '>30%', temp20: '✓', temp60: '□', category: 'Oxidantes' },
+
+            // ÁCIDO LÁTICO ATÉ LEITE
+            { name: 'Lactic acid', concentration: '>90%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Linseed oil', concentration: '-', temp20: '✓', temp60: '✓', category: 'Óleos' },
+
+            // MAGNÉSIO ATÉ MERCÚRIO
+            { name: 'Magnesium carbonate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Magnesium chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Magnesium sulphate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Malic acid', concentration: 'Sol', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Mercury', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Metais' },
+            { name: 'Mercury III chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Mercury III cyanide', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Mercury II nitrate', concentration: 'Sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Methyl acetate', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Solventes' },
+            { name: 'Methyl alcohol', concentration: '5%', temp20: '✓', temp60: '□', category: 'Álcoois' },
+            { name: 'Methyl bromide', concentration: '100%', temp20: '✕', temp60: '✕', category: 'Solventes' },
+            { name: 'Methyl ether ketone', concentration: '100%', temp20: '✓', temp60: '✕', category: 'Solventes' },
+            { name: 'Milk', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Alimentos' },
+            { name: 'Monochloroacetic acid', concentration: '>85%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+
+            // NÍQUEL ATÉ NÍTRICO
+            { name: 'Nickel chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Nickel nitrate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Nickel sulphate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Nitric acid', concentration: '10%', temp20: '✓', temp60: '✕', category: 'Ácidos' },
+            { name: 'Nitric acid', concentration: '30%', temp20: '✓', temp60: '-', category: 'Ácidos' },
+            { name: 'Nitric acid', concentration: '40-50%', temp20: '□', temp60: '✕', category: 'Ácidos' },
+
+            // ÓLEOS E ÁCIDOS OLEICOS
+            { name: 'Oleic acid', concentration: '100%', temp20: '✓', temp60: '□', category: 'Ácidos Gordos' },
+            { name: 'Olive oil', concentration: '-', temp20: '✓', temp60: '-', category: 'Óleos' },
+            { name: 'Oxalic acid', concentration: 'Sat.sol', temp20: '✓', temp60: '□', category: 'Ácidos' },
+            { name: 'Oxygen', concentration: '100%', temp20: '✓', temp60: '-', category: 'Gases' },
+
+            // FENOL ATÉ FÓSFORO
+            { name: 'Phenol', concentration: '5%', temp20: '✓', temp60: '✓', category: 'Químicos Org.' },
+            { name: 'Phenol', concentration: '90%', temp20: '✓', temp60: '-', category: 'Químicos Org.' },
+            { name: 'Phosphoric acid', concentration: '25%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Phosphoric acid', concentration: '25-85%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+
+            // POTÁSSIO
+            { name: 'Potassium bicarbonate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Potassium borate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Potassium bromide', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Potassium carbonate', concentration: 'Sat.sol', temp20: '✓', temp60: '-', category: 'Sais' },
+            { name: 'Potassium chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '-', category: 'Sais' },
+            { name: 'Potassium chromate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Potassium fluoride', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Potassium hydroxide', concentration: '>50%', temp20: '✓', temp60: '✓', category: 'Bases' },
+            { name: 'Potassium nitrate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+
+            // SÓDIO
+            { name: 'Sodium acetate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Sodium benzoate', concentration: '35%', temp20: '✓', temp60: '-', category: 'Sais' },
+            { name: 'Sodium carbonate', concentration: '>50%', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Sodium chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Sodium chlorite', concentration: '2%', temp20: '✓', temp60: '□', category: 'Desinfetantes' },
+            { name: 'Sodium chlorite', concentration: '20%', temp20: '✓', temp60: '□', category: 'Desinfetantes' },
+            { name: 'Sodium dichromate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Sodium hydroxide', concentration: '1%', temp20: '✓', temp60: '✓', category: 'Bases' },
+            { name: 'Sodium hydroxide', concentration: '10-60%', temp20: '✓', temp60: '✓', category: 'Bases' },
+            { name: 'Sodium hypoclorite', concentration: '5%', temp20: '✓', temp60: '-', category: 'Desinfetantes' },
+            { name: 'Sodium hypoclorite', concentration: '10%', temp20: '✓', temp60: '-', category: 'Desinfetantes' },
+            { name: 'Sodium hypoclorite', concentration: '20%', temp20: '✓', temp60: '-', category: 'Desinfetantes' },
+            { name: 'Sodium nitrate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Sodium phosphate (neutral)', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Sodium silicate', concentration: 'Sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Sodium sulphate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Sodium sulphite', concentration: '40%', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Soybean oil', concentration: '-', temp20: '✓', temp60: '□', category: 'Óleos' },
+
+            // ÁCIDOS SULFÚRICO
+            { name: 'Sulphonic acid', concentration: '>10%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Sulphuric acid', concentration: '10-30%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Sulphuric acid', concentration: '50%', temp20: '✓', temp60: '□', category: 'Ácidos' },
+            { name: 'Sulphuric acid', concentration: '96%', temp20: '✓', temp60: '□', category: 'Ácidos' },
+            { name: 'Sulphuric acid', concentration: '98%', temp20: '□', temp60: '✕', category: 'Ácidos' },
+
+            // TÁRTARO ATÉ XILENO
+            { name: 'Tartaric acid', concentration: '10%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Toluene', concentration: '100%', temp20: '□', temp60: '✕', category: 'Solventes' },
+            { name: 'Trichloroacetic acid', concentration: '>50%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
+            { name: 'Trichloroethylene', concentration: '100%', temp20: '✕', temp60: '✕', category: 'Solventes' },
+            { name: 'Turpentine', concentration: '-', temp20: '✕', temp60: '✕', category: 'Solventes' },
+
+            // ÁGUA E BEBIDAS
+            { name: 'Vinegar', concentration: '-', temp20: '✓', temp60: '✓', category: 'Alimentos' },
+            { name: 'Water (brackish, mineral, potable)', concentration: '-', temp20: '✓', temp60: '✓', category: 'Água' },
+            { name: 'Whiskey', concentration: '-', temp20: '✓', temp60: '-', category: 'Bebidas' },
+            { name: 'Wines', concentration: '-', temp20: '✓', temp60: '-', category: 'Bebidas' },
+
+            // ZINCO
+            { name: 'Zinc chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Zinc sulphate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+        ];
+
+        // ====================================================================
+        // FUNÇÕES PRINCIPAIS
+        // ====================================================================
+
+        function getResistanceClass(value) {
+            if (value === '✓') return 'success';
+            if (value === '□') return 'warning';
+            if (value === '✕') return 'danger';
+            return 'neutral';
+        }
+
+        function getResistanceLabel(value) {
+            if (value === '✓') return 'Satisfatória';
+            if (value === '□') return 'Limitada';
+            if (value === '✕') return 'Não Satisfatória';
+            return 'Indisponível';
+        }
+
+        function populateChemicalDropdown() {
+            const select = document.getElementById('searchChemical');
+            const uniqueNames = [...new Set(chemicalData.map(item => item.name))]
+                .sort((a, b) => a.localeCompare(b, 'pt'));
+
+            uniqueNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
+        }
+
+        // ====================================================================
+        // ESTADO DE ORDENAÇÃO
+        // ====================================================================
+        let categorySortDirection = null; // null (original) -> 'asc' -> 'desc' -> null
+        let lastDisplayResults = [];   // últimos resultados efetivamente mostrados (filtrados + ordenados)
+        let lastFilterSummary = '';    // descrição legível dos filtros ativos, para o relatório PDF
+
+        function toggleCategorySort() {
+            if (categorySortDirection === null) {
+                categorySortDirection = 'asc';
+            } else if (categorySortDirection === 'asc') {
+                categorySortDirection = 'desc';
+            } else {
+                categorySortDirection = null;
+            }
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const searchSelect = document.getElementById('searchChemical');
+            const searchTerm = searchSelect.value.toLowerCase();
+            const tempFilter = document.getElementById('filterTemp').value;
+            const resistanceFilter = document.getElementById('filterResistance').value;
+
+            // Descrição legível dos filtros ativos, usada no relatório PDF
+            const summaryParts = [];
+            if (searchSelect.value) {
+                summaryParts.push(`Químico: ${searchSelect.options[searchSelect.selectedIndex].textContent}`);
+            }
+            if (tempFilter) {
+                summaryParts.push(`Temperatura: ${tempFilter}°C`);
+            }
+            if (resistanceFilter) {
+                const resistanceLabels = { satisfactory: 'Satisfatória', limited: 'Limitada', unsatisfactory: 'Não Satisfatória' };
+                summaryParts.push(`Resistência: ${resistanceLabels[resistanceFilter]}`);
+            }
+            lastFilterSummary = summaryParts.length ? summaryParts.join('  •  ') : 'Sem filtros aplicados (todos os químicos)';
+
+            let filtered = chemicalData;
+
+            // Filtro por nome
+            if (searchTerm) {
+                filtered = filtered.filter(item =>
+                    item.name.toLowerCase().includes(searchTerm) ||
+                    item.concentration.toLowerCase().includes(searchTerm) ||
+                    item.category.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Filtro por temperatura
+            if (tempFilter === '20') {
+                filtered = filtered.filter(item => item.temp20 !== '-');
+            } else if (tempFilter === '60') {
+                filtered = filtered.filter(item => item.temp60 !== '-');
+            }
+
+            // Filtro por resistência
+            if (resistanceFilter === 'satisfactory') {
+                filtered = filtered.filter(item =>
+                    (tempFilter === '' || tempFilter === '20') && item.temp20 === '✓' ||
+                    (tempFilter === '' || tempFilter === '60') && item.temp60 === '✓'
+                );
+            } else if (resistanceFilter === 'limited') {
+                filtered = filtered.filter(item =>
+                    (tempFilter === '' || tempFilter === '20') && item.temp20 === '□' ||
+                    (tempFilter === '' || tempFilter === '60') && item.temp60 === '□'
+                );
+            } else if (resistanceFilter === 'unsatisfactory') {
+                filtered = filtered.filter(item =>
+                    (tempFilter === '' || tempFilter === '20') && item.temp20 === '✕' ||
+                    (tempFilter === '' || tempFilter === '60') && item.temp60 === '✕'
+                );
+            }
+
+            renderResults(filtered);
+            updateStats(filtered);
+        }
+
+        function renderResults(results) {
+            const container = document.getElementById('resultsContainer');
+
+            if (results.length === 0) {
+                lastDisplayResults = [];
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-flask"></i>
+                        <p>Nenhum resultado encontrado. Tente outros filtros.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Se a ordenação por categoria estiver ativa, agrupa e ordena
+            let displayResults = results;
+            if (categorySortDirection) {
+                displayResults = [...results].sort((a, b) => {
+                    const cmp = a.category.localeCompare(b.category, 'pt');
+                    return categorySortDirection === 'asc' ? cmp : -cmp;
+                });
+            }
+            lastDisplayResults = displayResults;
+
+            // Ícone de ordenação no cabeçalho "Categoria"
+            let sortIcon = '';
+            if (categorySortDirection === 'asc') sortIcon = '<span class="sort-icon">▲</span>';
+            else if (categorySortDirection === 'desc') sortIcon = '<span class="sort-icon">▼</span>';
+
+            let html = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Químico</th>
+                                <th>Concentração</th>
+                                <th class="sortable" onclick="toggleCategorySort()" title="Ordenar por: Categoria">Categoria${sortIcon}</th>
+                                <th>20°C</th>
+                                <th>60°C</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            let lastCategory = null;
+            let rowIndex = 0;
+
+            displayResults.forEach((item) => {
+                // Insere uma linha divisória sempre que a categoria muda (só quando o agrupamento está ativo)
+                if (categorySortDirection && item.category !== lastCategory) {
+                    const countInCategory = displayResults.filter(r => r.category === item.category).length;
+                    html += `
+                        <tr class="category-group-row">
+                            <td colspan="6">
+                                <i class="fas fa-layer-group"></i> ${item.category}
+                                <span class="group-count">${countInCategory} ${countInCategory === 1 ? 'item' : 'itens'}</span>
+                            </td>
+                        </tr>
+                    `;
+                    lastCategory = item.category;
+                }
+
+                rowIndex++;
+                const class20 = getResistanceClass(item.temp20);
+                const class60 = getResistanceClass(item.temp60);
+                const label20 = getResistanceLabel(item.temp20);
+                const label60 = getResistanceLabel(item.temp60);
+
+                html += `
+                    <tr>
+                        <td style="color: var(--text-tertiary); font-family: 'JetBrains Mono';">${rowIndex}</td>
+                        <td style="font-weight: 500;">${item.name}</td>
+                        <td style="color: var(--text-tertiary); font-size: 0.85rem; font-family: 'JetBrains Mono';">${item.concentration}</td>
+                        <td><span style="font-size: 0.8rem; color: var(--text-tertiary);">${item.category}</span></td>
+                        <td>
+                            <span class="badge badge-${class20}" title="${label20}">
+                                ${item.temp20}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-${class60}" title="${label60}">
+                                ${item.temp60}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function updateStats(results) {
+            let satisfactory = 0;
+            let limited = 0;
+            let unsatisfactory = 0;
+
+            results.forEach(item => {
+                if (item.temp20 === '✓' || item.temp60 === '✓') satisfactory++;
+                if (item.temp20 === '□' || item.temp60 === '□') limited++;
+                if (item.temp20 === '✕' || item.temp60 === '✕') unsatisfactory++;
+            });
+
+            document.getElementById('totalChemicals').textContent = results.length;
+            document.getElementById('satisfactoryCount').textContent = satisfactory;
+            document.getElementById('limitedCount').textContent = limited;
+            document.getElementById('unsatisfactoryCount').textContent = unsatisfactory;
+        }
+
+        function resetFilters() {
+            document.getElementById('searchChemical').value = '';
+            document.getElementById('filterTemp').value = '';
+            document.getElementById('filterResistance').value = '';
+
+            document.getElementById('totalChemicals').textContent = chemicalData.length;
+            document.getElementById('satisfactoryCount').textContent = '0';
+            document.getElementById('limitedCount').textContent = '0';
+            document.getElementById('unsatisfactoryCount').textContent = '0';
+            document.getElementById('resultsContainer').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-search"></i>
+                    <p>Use os filtros acima para buscar químicos</p>
+                </div>
+            `;
+            showToast('Filtros limpos', 'success');
+        }
+
+        function exportToPDF() {
+            if (lastDisplayResults.length === 0) {
+                showToast('Não há resultados para exportar', 'info');
+                return;
+            }
+
+            const printReport = document.getElementById('printReport');
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-PT') + ', ' + now.toLocaleTimeString('pt-PT');
+
+            let bodyHtml = `
+                <h1>Consulta de Resistência Química - PP-R</h1>
+                <div class="print-meta">Data: ${dateStr}</div>
+                <div class="print-filters">Filtros: ${lastFilterSummary}</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Químico</th>
+                            <th>Concentração</th>
+                            <th>Categoria</th>
+                            <th>20°C</th>
+                            <th>60°C</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            let lastCategory = null;
+            let rowIndex = 0;
+
+            lastDisplayResults.forEach((item) => {
+                if (categorySortDirection && item.category !== lastCategory) {
+                    bodyHtml += `
+                        <tr class="print-group-row">
+                            <td colspan="6">${item.category}</td>
+                        </tr>
+                    `;
+                    lastCategory = item.category;
+                }
+
+                rowIndex++;
+                const label20 = getResistanceLabel(item.temp20);
+                const label60 = getResistanceLabel(item.temp60);
+
+                bodyHtml += `
+                    <tr>
+                        <td>${rowIndex}</td>
+                        <td>${item.name}</td>
+                        <td>${item.concentration}</td>
+                        <td>${item.category}</td>
+                        <td title="${label20}">${item.temp20}</td>
+                        <td title="${label60}">${item.temp60}</td>
+                    </tr>
+                `;
+            });
+
+            bodyHtml += `
+                    </tbody>
+                </table>
+                <div class="print-summary">Total de químicos listados: ${lastDisplayResults.length}</div>
+            `;
+
+            printReport.innerHTML = bodyHtml;
+
+            window.print();
+            showToast('PDF pronto para exportar/guardar', 'success');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.background = type === 'success' ? 'rgba(53, 208, 160, 0.95)' : 'rgba(255, 138, 0, 0.95)';
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideInUp 0.3s reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ====================================================================
+        // INICIALIZAÇÃO
+        // ====================================================================
+
+        window.addEventListener('load', () => {
+            populateChemicalDropdown();
+            document.getElementById('totalChemicals').textContent = chemicalData.length;
+            applyFilters();
+        });
+
+        // Busca automaticamente ao selecionar um químico no dropdown
+        document.getElementById('searchChemical').addEventListener('change', () => {
+            applyFilters();
+        });
+    </script>
+    <!-- Relatório de impressão (a preto e branco) - só visível ao imprimir/exportar PDF -->
+    <div id="printReport"></div>
+</body>
+</html>
