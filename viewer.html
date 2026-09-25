@@ -1,0 +1,2080 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>IFC Interactive Viewer</title>
+  <link rel="icon" href="data:,">
+  <style>
+
+    html, body { margin:0; height:100%; background:#071224; overflow:hidden; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    #app { position:fixed; inset:0; }
+    canvas { display:block; width:100%; height:100%; }
+
+    /* Top-left badge */
+    .badge{
+      position:fixed; left:14px; top:14px;
+      background:rgba(18,28,45,.75);
+      backdrop-filter: blur(10px);
+      border:1px solid rgba(255,255,255,.10);
+      color:#eaf2ff; border-radius:14px;
+      padding:10px 12px; line-height:1.15;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      max-width: 300px;
+    }
+    .badge .t{ font-weight:700; font-size:14px; letter-spacing:.2px; display:flex; gap:10px; align-items:center; }
+    .badge .t .pill{ font-weight:800; font-size:12px; padding:2px 8px; border-radius:999px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.10); }
+    .badge .s{ margin-top:4px; font-size:12px; opacity:.85; }
+
+    /* Top-right actions */
+    .actions{
+      position:fixed; right:14px; top:14px;
+      display:flex; gap:10px; align-items:center;
+    }
+    .btn{
+      cursor:pointer; user-select:none;
+      padding:8px 10px; border-radius:12px;
+      background:rgba(18,28,45,.72);
+      color:#eaf2ff; border:1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(10px);
+      font-size:12px; font-weight:700;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .btn:hover{ background:rgba(28,40,62,.75); }
+    .btn.primary{ background:rgba(22,117,84,.75); border-color: rgba(46,204,148,.25); }
+    .btn.primary:hover{ background:rgba(22,117,84,.9); }
+
+    /* Bottom-left panel (Open IFC / Escolher ficheiro / Clear / Sombras) and
+       bottom-right status card were moved OUT of this document into
+       index.html, for an uncluttered 3D view — this iframe now talks to
+       them purely via postMessage (see the "trigger-*"/"set-*" handler in
+       init() and the setStatus()/showError()/clearError() functions). The
+       hidden #fileInput stays here because it must live in this document
+       to open the OS file picker (see #hiddenLegacyControls below). */
+
+    /* Mobile tweaks */
+    @media (max-width: 560px){
+      .actions{ right:10px; top:10px; gap:8px; }
+      .badge{ left:10px; top:10px; max-width: 70vw; }
+      .btn{ padding:7px 9px; border-radius:11px; }
+    }
+
+    /* --- Responsive navigation (mobile menu) --- */
+    #menuToggle{ display:none; user-select:none; }
+    #actionsBar{ display:flex; align-items:flex-start; gap:10px; }
+    #actionsGroup{ display:flex; gap:10px; align-items:center; }
+    @media (max-width: 560px){
+      #menuToggle{ display:inline-flex; align-items:center; justify-content:center; width:40px; }
+      #actionsGroup{
+        display:none;
+        position:absolute;
+        right:0;
+        top:44px;
+        flex-direction:column;
+        align-items:stretch;
+        gap:8px;
+        padding:10px;
+        border-radius:14px;
+        background:rgba(12,18,32,0.92);
+        border:1px solid rgba(255,255,255,0.12);
+        box-shadow:0 10px 30px rgba(0,0,0,0.35);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        max-width: min(82vw, 320px);
+      }
+      #actionsBar.open #actionsGroup{ display:flex; }
+    }
+
+    /* --- Mobile-friendly properties panel (bottom sheet behavior) --- */
+    .propsPanel{ max-width: min(420px, calc(100vw - 24px)); max-height: 70vh; }
+    .propsBody{ -webkit-overflow-scrolling: touch; }
+    @media (max-width: 560px){
+      .propsPanel{
+        left:10px !important;
+        right:10px !important;
+        top:auto !important;
+        bottom:10px !important;
+        width:auto !important;
+        height:55vh;
+        max-height:70vh;
+        border-radius:18px;
+      }
+    }
+
+    /* --- Safe-area support (iOS notch/home bar) --- */
+    .actions{ top: calc(14px + env(safe-area-inset-top)); right: calc(14px + env(safe-area-inset-right)); }
+    .badge{ top: calc(14px + env(safe-area-inset-top)); left: calc(14px + env(safe-area-inset-left)); }
+
+    /* Improve touch ergonomics */
+    .btn{ touch-action: manipulation; }
+
+
+  /* ---- Compatibility layer for viewer.html logic ---- */
+  #viewer { position:fixed; inset:0; }
+  #canvas { display:block; width:100%; height:100%; }
+
+    /* IFC Properties panel (right) */
+    .propsPanel{
+      position:fixed; right:14px; top:86px;
+      width:min(380px, calc(100vw - 28px));
+      max-height: calc(100vh - 190px);
+      background:rgba(18,28,45,.72);
+      backdrop-filter: blur(10px);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+      color:#eaf2ff;
+      overflow:hidden;
+      display:none;
+      z-index: 20;
+    }
+    .propsPanel .ph{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      cursor: grab;
+    }
+    .propsPanel .pt{
+      font-weight:700; letter-spacing:.2px; font-size:13px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .propsPanel .pclose{
+      cursor:pointer; user-select:none;
+      padding:6px 10px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      font-weight:700;
+    }
+    .propsPanel .pclose:hover{ background:rgba(255,255,255,.10); }
+    .propsPanel .pclose.is-disabled{ opacity:.35; cursor:not-allowed; }
+    .propsPanel .pclose.is-disabled:hover{ background:transparent; }
+    /* Collapsed state: keep only the header visible so the panel stops
+       covering the 3D view; body is hidden until expanded again. */
+    .propsPanel.collapsed .pb{ display:none; }
+    .propsPanel .pb{
+      padding:10px 12px;
+      overflow:auto;
+      max-height: calc(100vh - 240px);
+    }
+    .propsPanel .kv{
+      display:grid; grid-template-columns: 112px 1fr;
+      gap:6px 10px;
+      font-size:12px;
+      margin-bottom:10px;
+    }
+    .propsPanel .k{ color:rgba(234,242,255,.72); }
+    .propsPanel .v{ color:#eaf2ff; word-break:break-word; }
+    /* Truncated by default so a long IFC name can't dominate the panel;
+       click the value to expand and read it in full. */
+    .propsPanel .v.truncatable{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      cursor:pointer;
+    }
+    .propsPanel .v.truncatable.expanded{
+      white-space:normal;
+      overflow:visible;
+      text-overflow:clip;
+    }
+    .propsPanel .sec{
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px solid rgba(255,255,255,.10);
+    }
+    .propsPanel .sec h4{
+      margin:0 0 8px 0; font-size:12px; letter-spacing:.2px;
+      color:rgba(234,242,255,.85);
+    }
+    .propsPanel .list{
+      margin:0; padding:0; list-style:none;
+      font-size:12px;
+    }
+    .propsPanel .list li{
+      padding:6px 8px;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:10px;
+      background:rgba(255,255,255,.04);
+      margin-bottom:8px;
+    }
+
+    /* Lighting controls */
+    .ctrlRow{ margin-top:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .ctrlRow label{ font-size:12px; opacity:.9; }
+    .ctrlRow input[type="range"]{ width:180px; }
+    .ctrlVal{ font-size:12px; opacity:.85; min-width:42px; text-align:right; }
+    .toggle{ display:flex; align-items:center; gap:6px; font-size:12px; opacity:.9; user-select:none; }
+    .toggle input{ transform: translateY(1px); }
+
+    @media (max-width: 560px){
+      .ctrlRow{ gap:8px; }
+      .ctrlRow input[type="range"]{ width:min(240px, 70vw); }
+    }
+</style>
+
+
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/",
+      "web-ifc": "https://cdn.jsdelivr.net/npm/web-ifc@0.0.74/web-ifc-api.js",
+      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/",
+      "three/examples/jsm/utils/BufferGeometryUtils": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/utils/BufferGeometryUtils.js",
+      "three/examples/jsm/controls/OrbitControls": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js",
+      "three/examples/jsm/renderers/CSS2DRenderer": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/renderers/CSS2DRenderer.js"
+    }
+  }
+  </script>
+</head>
+
+<body>
+  <!-- Canvas host -->
+  <div id="app">
+    <div id="viewer"><canvas id="canvas"></canvas></div>
+  </div>
+
+  <!-- Top-left badge -->
+  <div class="badge">
+    <div class="t"><span class="pill">IFC</span> IFC Interactive Viewer</div>
+    <div class="s" id="defaultInfo">Abre um IFC padrão • permite carregar outro ficheiro local</div>
+  </div>
+
+  <!-- Top-right actions (mapped to viewer.html ids) -->
+  <div class="actions" id="actionsBar">
+    <div class="btn" id="menuToggle" title="Menu" aria-label="Menu">☰</div>
+    <div class="actionsGroup" id="actionsGroup">
+      <div class="btn" id="btnReset">Reset view</div>
+      <div class="btn" id="btnFit">Fit model</div>
+      <div class="btn" id="btnTop">Top view</div>
+
+      <!-- background color picker (viewer.html expects an <input>) -->
+      <label class="btn" style="padding:0; overflow:hidden;">
+        <input id="bgColor" type="color" value="#071224" title="Background color"
+               style="width:44px;height:32px;border:0;background:transparent;cursor:pointer;">
+      </label>
+
+      <!-- optional background presets expected by viewer.html (hidden, but kept for compatibility) -->
+      <button id="bgDark" type="button" style="display:none"></button>
+      <button id="bgWhite" type="button" style="display:none"></button>
+
+      <div class="btn" id="gridToggle">Grid: On</div>
+      <div class="btn" id="btnRotate">Rotate: Off</div>
+      <div class="btn primary" id="btnFs">Fullscreen</div>
+    </div>
+  </div>
+
+  <!-- Bottom-left panel and bottom-right status now live in index.html
+       (see the comment near .badge in <style>). Only the elements the
+       viewer's own JS genuinely needs to keep working stay in this
+       document, hidden — id="hiddenLegacyControls". -->
+  <div id="hiddenLegacyControls" style="display:none">
+    <input id="fileInput" type="file" accept=".ifc,.glb,.gltf" multiple />
+    <input id="gridToggleLegacy" type="checkbox" />
+    <select id="gridMode"><option value="0">0</option></select>
+    <select id="qualitySelect"><option value="high">high</option></select>
+    <input id="smoothShading" type="checkbox" />
+  </div>
+
+  <!-- IFC properties (auto shown on selection) -->
+  <div class="propsPanel" id="propsPanel" style="display:none">
+    <div class="ph">
+      <div class="pt"><span class="pill">IFC</span> Propriedades</div>
+      <div style="display:flex; gap:6px;">
+        <div class="pclose" id="propsDetach" title="Destacar (arrastar por toda a tela)">⤢</div>
+        <div class="pclose" id="propsMin" title="Minimizar">–</div>
+        <div class="pclose" id="propsClose">×</div>
+      </div>
+    </div>
+    <div class="pb" id="propsBody"></div>
+  </div>
+
+  <script src="3D-Model-data.js"></script>
+  <script type="module">
+import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+    import { IFCLoader } from "https://cdn.jsdelivr.net/npm/web-ifc-three@0.0.126/IFCLoader.js";
+
+    // Postprocessing (anti-aliasing)
+    import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+    import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+    import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+    import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
+
+    const DEFAULT_IFC_URL = "./3D-Model.ifc";
+    const WEB_IFC_WASM_PATH = "https://cdn.jsdelivr.net/npm/web-ifc@0.0.74/";
+    const FALLBACK_NEUTRAL_HEX = 0xd5dbe3; // neutral light gray for unstyled meshes
+
+    const BG_STORAGE_KEY = "heliroma_viewer_bg";
+    const DEFAULT_BG_HEX = "#071224";
+    const DARK_BG_HEX = "#0b1220";
+
+    const GRID_VISIBLE_KEY = "heliroma_grid_visible";
+    const GRID_MODE_KEY = "heliroma_grid_mode"; // "finite" | "infinite"
+
+
+    const el = {
+      canvas: document.getElementById("canvas"),
+      viewer: document.getElementById("viewer"),
+
+      // Desktop toolbar
+      status: document.getElementById("status"),
+      bgColor: document.getElementById("bgColor"),
+      bgWhite: document.getElementById("bgWhite"),
+      bgDark: document.getElementById("bgDark"),
+      gridToggle: document.getElementById("gridToggle"),
+      btnRotate: document.getElementById("btnRotate"),
+      gridMode: document.getElementById("gridMode"),
+      fileInput: document.getElementById("fileInput"),
+      btnLoad: document.getElementById("btnLoad"),
+      btnFit: document.getElementById("btnFit"),
+      btnReset: document.getElementById("btnReset"),
+      btnTop: document.getElementById("btnTop"),
+      btnClear: document.getElementById("btnClear"),
+
+      // Quality
+      qualitySelect: document.getElementById("qualitySelect"),
+      smoothShading: document.getElementById("smoothShading"),
+
+      defaultInfo: document.getElementById("defaultInfo"),
+      shadowControl: document.getElementById("shadowControl"),
+      shadowControlVal: document.getElementById("shadowControlVal"),
+      shadowsToggle: document.getElementById("shadowsToggle"),
+      shadowsToggleText: document.getElementById("shadowsToggleText")
+    };
+
+    // --- Responsive helpers (mobile menu + mode class) ---
+    const actionsBar = document.getElementById("actionsBar");
+    const menuToggle = document.getElementById("menuToggle");
+
+    function updateResponsiveMode(){
+      const isMobile = window.matchMedia("(max-width: 560px)").matches || (navigator.maxTouchPoints || 0) > 0;
+      document.body.classList.toggle("isMobile", isMobile);
+      // Close menu when leaving mobile layout
+      if(!isMobile && actionsBar) actionsBar.classList.remove("open");
+    }
+    window.addEventListener("resize", updateResponsiveMode, { passive:true });
+    updateResponsiveMode();
+
+    if(menuToggle && actionsBar){
+      menuToggle.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        actionsBar.classList.toggle("open");
+      });
+      // Close menu when clicking outside
+      document.addEventListener("click", (e)=>{
+        if(actionsBar.classList.contains("open") && !actionsBar.contains(e.target)){
+          actionsBar.classList.remove("open");
+        }
+      }, { passive:true });
+    }
+
+
+    let scene, camera, renderer, controls;
+    let ifcLoader;
+    let gltfLoader;
+    let groundPlane = null;
+    let sunLight = null;
+    let ambientLight = null;
+    let hemiLight = null;
+    let currentModel = null;
+    let initialModelQuat = null; // stores the model orientation at load time
+
+    // Shared cancellation token for camera tweens (setViewOrientation, focusToPoint,
+    // focusToObject). Each animation captures the token value when it starts; if a
+    // newer animation begins, the token changes and older loops stop themselves
+    // instead of fighting over camera.position/controls.target.
+    let cameraAnimToken = 0;
+
+// IFC Selection (Process A)
+const raycaster = new THREE.Raycaster();
+const mouseNDC = new THREE.Vector2();
+
+let ifcModels = [];              // IFC root meshes loaded
+let selectedIFC = { modelID: null, expressID: null };
+let ifcSubset = null;
+// Quando true, o painel de propriedades foi "destacado" para o documento pai
+// (index.html) e vive lá como janela flutuante; a cópia local fica oculta
+// mas continua a ser atualizada para manter o conteúdo em sincronia.
+let panelDetached = false;
+
+const IFC_HIGHLIGHT_MAT = new THREE.MeshStandardMaterial({
+  color: 0xffd54a,
+  transparent: true,
+  opacity: 0.55,
+  depthTest: true
+});
+
+// Returns the correct parent/group where IFC highlight subset must be attached.
+// IMPORTANT: centerModelOnGrid() translates the model root's own .position
+// directly (it is not wrapped in a separate rig). A highlight subset added
+// as a sibling in the scene would NOT inherit that translation, causing the
+// highlight to appear offset from the actual element. Attaching the subset
+// as a CHILD of the model root fixes this: it automatically inherits the
+// model's current position/rotation/scale, so it always lines up correctly.
+function getIFCHighlightParent(modelID){
+  const root = ifcModels.find(m => (m?.userData?.ifcModelID ?? m?.modelID ?? 0) === modelID) || ifcModels[0];
+  return root || scene;
+}
+    let currentURL = null;
+
+    let finiteGrid = null;
+    let infiniteGrid = null;
+    let gridVisible = true;
+    let gridMode = "infinite";
+
+    // Auto-rotate around model center (toggle)
+    let autoRotate = false;
+    const AUTO_ROTATE_KEY = "ifcviewer_auto_rotate";
+    const AUTO_ROTATE_SPEED = 0.35; // rad/s
+
+    const clock = new THREE.Clock();
+
+    // Postprocessing / Quality
+    let composer = null;
+    let renderPass = null;
+    let fxaaPass = null;
+
+    let qualityLevel = "high";
+    let smoothEnabled = false;
+
+    const QUALITY_KEY = "heliroma_quality";
+    const SMOOTH_KEY = "heliroma_smooth";
+
+    let currentPixelRatio = 1;
+
+    // Status card now lives in index.html (outside this document) — these
+    // three functions keep their original call signatures/behaviour, but
+    // instead of touching local DOM they post the current {text, ok, sub}
+    // to the parent window, which renders it. lastStatus* mirrors what the
+    // old #statusText/#statusSub/.dot held, so a call that only changes one
+    // piece (e.g. clearError() only resets "sub") doesn't clobber the rest.
+    let lastStatusText = "Ready";
+    let lastStatusOk = true;
+    let lastStatusSub = "Abra um IFC. Use mouse/touch para orbitar/zoom/pan.";
+
+    function postStatusToHost(){
+      try {
+        window.parent.postMessage({
+          source: "ifc-viewer",
+          type: "status-update",
+          text: lastStatusText,
+          ok: lastStatusOk,
+          sub: lastStatusSub
+        }, "*");
+      } catch(_){}
+    }
+
+    function showError(message, err){
+      console.error(message, err);
+      const fullMessage = message + (err ? ` (${err?.message || err})` : "");
+      lastStatusSub = fullMessage;
+      setStatus("Error", false);
+    }
+
+    function clearError(){
+      lastStatusSub = "Abra um IFC. Use mouse/touch para orbitar/zoom/pan.";
+      postStatusToHost();
+    }
+
+    function setStatus(text, ok=true){
+      lastStatusText = text;
+      lastStatusOk = ok;
+      postStatusToHost();
+    }
+
+// ---- IFC picking / properties (Process A) ----
+function clearIFCSelection(){
+  try{
+    if (ifcSubset && selectedIFC.modelID != null){
+      // remove previous highlight subset (customID/material key)
+      ifcLoader?.ifcManager?.removeSubset(selectedIFC.modelID, IFC_HIGHLIGHT_MAT);
+    }
+  }catch(_){}
+  ifcSubset = null;
+  selectedIFC.modelID = null;
+  selectedIFC.expressID = null;
+
+  // hide properties panel
+  const panel = document.getElementById("propsPanel");
+  if (panel) panel.style.display = "none";
+  const body = document.getElementById("propsBody");
+  if (body) body.innerHTML = "";
+}
+
+// Cancela mesmo o "fixar" e avisa o index.html para esconder o painel
+// externo. Só deve ser chamada nos pontos de desseleção REAL (clicar em
+// vazio, limpar o modelo) — nunca na limpeza interna que antecede a seleção
+// de um novo elemento (essa é feita só por clearIFCSelection()).
+function releaseDetachedPanel(){
+  if (panelDetached){
+    panelDetached = false;
+    try { window.parent.postMessage({ source: "ifc-viewer", type: "props-clear" }, "*"); } catch(_){}
+  }
+}
+
+function getExpressIdFromIntersection(hit){
+  // Walk up to find the IFC root that holds modelID
+  let obj = hit.object;
+  while (obj && obj.userData && obj.userData.__isIFC !== true && obj.parent){
+    obj = obj.parent;
+  }
+  const modelID = obj?.userData?.ifcModelID;
+  if (modelID == null) return null;
+
+  // Reliable expressID retrieval (web-ifc-three provides a helper for indexed / non-indexed geometry)
+  const geom = hit.object.geometry;
+  if (!geom) return null;
+
+  let expressID = null;
+  try{
+    // faceIndex is the canonical key used by IFCLoader's manager
+    if (typeof hit.faceIndex === "number" && ifcLoader?.ifcManager?.getExpressId){
+      expressID = ifcLoader.ifcManager.getExpressId(geom, hit.faceIndex);
+    }
+  }catch(_){ /* fall back below */ }
+
+  // Fallback (less reliable): read from expressID attribute
+  if (expressID == null){
+    const face = hit.face;
+    if (!face || !geom.attributes || !geom.attributes.expressID) return null;
+    const expAttr = geom.attributes.expressID;
+    const vIndex = face.a;
+    expressID = expAttr.getX(vIndex);
+  }
+
+  if (expressID == null || !Number.isFinite(Number(expressID))) return null;
+  expressID = Number(expressID);
+
+  return { modelID, expressID };
+}
+
+async function showIFCProperties(modelID, expressID){
+  const panel = document.getElementById("propsPanel");
+  const body  = document.getElementById("propsBody");
+
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const val = (obj) => (obj && typeof obj === "object" && "value" in obj) ? obj.value : obj;
+
+  const pickCommon = (props) => {
+    const name = val(props?.Name) || "(sem nome)";
+    const guid = val(props?.GlobalId) || "";
+    const type = props?.type || val(props?.ObjectType) || props?.constructor?.name || "";
+    const predefined = val(props?.PredefinedType) || "";
+    return { name, guid, type, predefined };
+  };
+
+  const extractSimplePset = (psets) => {
+    // Return up to 10 simple key/value pairs from the first 1–2 property sets
+    const pairs = [];
+    if (!Array.isArray(psets)) return pairs;
+    for (const ps of psets){
+      if (!ps || !ps.HasProperties || !Array.isArray(ps.HasProperties)) continue;
+      const psetName = val(ps.Name) || "";
+      for (const hp of ps.HasProperties){
+        const k = val(hp?.Name);
+        if (!k) continue;
+        const v = val(hp?.NominalValue);
+        if (v == null || v === "") continue;
+        pairs.push({ psetName, k, v });
+        if (pairs.length >= 10) return pairs;
+      }
+      if (pairs.length >= 10) return pairs;
+    }
+    return pairs;
+  };
+
+  const extractMaterials = (mats) => {
+    const names = [];
+    if (!Array.isArray(mats)) return names;
+    for (const m of mats){
+      const n = val(m?.Name);
+      if (n) names.push(n);
+      if (names.length >= 8) break;
+    }
+    return [...new Set(names)];
+  };
+
+  try{
+    const props = await ifcLoader.ifcManager.getItemProperties(modelID, expressID, true);
+    const psets = await ifcLoader.ifcManager.getPropertySets(modelID, expressID, true);
+    const mats  = await ifcLoader.ifcManager.getMaterialsProperties(modelID, expressID, true);
+
+    const { name, guid, type, predefined } = pickCommon(props);
+    // The full name/type/GUID are already shown in the properties panel above,
+    // so the status bar only needs a short pointer instead of repeating them.
+    setStatus(`Selecionado: ${type || "elemento"} · ExpressID ${expressID}`, true);
+
+    // Build panel HTML
+    const simplePairs = extractSimplePset(psets);
+    const matNames = extractMaterials(mats);
+
+    let html = `
+      <div class="kv">
+        <div class="k">Nome</div><div class="v truncatable" id="propName" title="${esc(name)}">${esc(name)}</div>
+        <div class="k">Tipo</div><div class="v">${esc(type || "-")}</div>
+        <div class="k">Predef.</div><div class="v">${esc(predefined || "-")}</div>
+        <div class="k">GUID</div><div class="v">${esc(guid || "-")}</div>
+        <div class="k">ExpressID</div><div class="v">${esc(expressID)}</div>
+      </div>
+    `;
+
+    if (matNames.length){
+      html += `<div class="sec"><h4>Materiais</h4><ul class="list">` +
+        matNames.map(n => `<li>${esc(n)}</li>`).join("") +
+        `</ul></div>`;
+    }
+
+    if (simplePairs.length){
+      html += `<div class="sec"><h4>Propriedades</h4><ul class="list">` +
+        simplePairs.map(p => `<li><span style="color:rgba(234,242,255,.72)">${esc(p.psetName ? p.psetName + " · " : "")}${esc(p.k)}</span><br/><span>${esc(p.v)}</span></li>`).join("") +
+        `</ul></div>`;
+    } else {
+      html += `<div class="sec"><h4>Propriedades</h4><div style="font-size:12px;color:rgba(234,242,255,.72)">Sem PropertySets simples para mostrar.</div></div>`;
+    }
+
+    body.innerHTML = html;
+
+    if (panelDetached){
+      // Painel vive fora, no index.html — mantemos a cópia local oculta mas
+      // atualizada, e reenviamos o conteúdo novo para a janela flutuante.
+      panel.style.display = "none";
+      try { window.parent.postMessage({ source: "ifc-viewer", type: "props-update", html }, "*"); } catch(_){}
+    } else {
+      panel.style.display = "block";
+    }
+
+    const nameEl = document.getElementById("propName");
+    if (nameEl){
+      nameEl.addEventListener("click", () => nameEl.classList.toggle("expanded"));
+    }
+
+    // Keep full details in console for debugging
+    console.log("[IFC] Selected expressID:", expressID, "modelID:", modelID);
+    console.log("[IFC] ItemProperties:", props);
+    console.log("[IFC] PropertySets:", psets);
+    console.log("[IFC] Materials:", mats);
+  }catch(err){
+    console.error("IFC property read error:", err);
+    setStatus("Falha ao ler propriedades do IFC (ver Console).", false);
+    if (body) body.innerHTML = `<div style="font-size:12px;color:rgba(234,242,255,.72)">Erro ao ler propriedades. Veja o Console.</div>`;
+    if (panel){
+      if (panelDetached){
+        panel.style.display = "none";
+        try { window.parent.postMessage({ source: "ifc-viewer", type: "props-update", html: body?.innerHTML || "" }, "*"); } catch(_){}
+      } else {
+        panel.style.display = "block";
+      }
+    }
+  }
+}
+
+
+function highlightIFC(modelID, expressID){
+  clearIFCSelection();
+  try{
+    ifcSubset = ifcLoader.ifcManager.createSubset({
+      modelID,
+      ids: [expressID],
+      material: IFC_HIGHLIGHT_MAT,
+      scene: getIFCHighlightParent(modelID),
+      removePrevious: true
+    });
+    selectedIFC.modelID = modelID;
+    selectedIFC.expressID = expressID;
+  }catch(err){
+    console.error("IFC highlight error:", err);
+  }
+}
+
+
+function selectIFCAtClient(clientX, clientY){
+  if (!canvas || !camera) return null;
+  const rect = canvas.getBoundingClientRect();
+  mouseNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  mouseNDC.y = -(((clientY - rect.top) / rect.height) * 2 - 1);
+
+  raycaster.setFromCamera(mouseNDC, camera);
+
+  // Intersect only IFC models
+  const hits = raycaster.intersectObjects(ifcModels, true);
+  if (!hits.length){
+    clearIFCSelection();
+    releaseDetachedPanel();
+    setStatus("Ready", true);
+    return null;
+  }
+
+  const info = getExpressIdFromIntersection(hits[0]);
+  if (!info) return null;
+
+  highlightIFC(info.modelID, info.expressID);
+  showIFCProperties(info.modelID, info.expressID);
+  return info;
+}
+
+// Seleção só é confirmada no pointerup, e apenas se o ponteiro praticamente
+// não se moveu entre o pointerdown e o pointerup — isto evita disparar uma
+// seleção sempre que o utilizador começa a orbitar a câmara (OrbitControls)
+// clicando/arrastando a partir de cima de geometria do modelo.
+const CLICK_MOVE_THRESHOLD_PX = 6;
+const CLICK_MAX_DURATION_MS = 500;
+let _pointerDownInfo = null; // { x, y, t } | null
+
+function onCanvasPointerDown(ev){
+  // Only left-click / primary pointer
+  if (ev.button !== 0) return;
+  _pointerDownInfo = { x: ev.clientX, y: ev.clientY, t: performance.now() };
+}
+
+function onCanvasPointerUpForSelect(ev){
+  const down = _pointerDownInfo;
+  _pointerDownInfo = null;
+  if (!down) return;
+  if (ev.button !== 0 && ev.pointerType !== "touch") return;
+
+  const dx = ev.clientX - down.x;
+  const dy = ev.clientY - down.y;
+  const dist = Math.hypot(dx, dy);
+  const dt = performance.now() - down.t;
+
+  // Só trata como "clique de seleção" se o ponteiro ficou (quase) parado
+  // e a duração foi curta — caso contrário foi um arrasto de órbita/pan,
+  // e a seleção teria sido acidental.
+  if (dist <= CLICK_MOVE_THRESHOLD_PX && dt <= CLICK_MAX_DURATION_MS){
+    selectIFCAtClient(ev.clientX, ev.clientY);
+  }
+}
+
+
+// --- Focus-to-selection via double click / double tap ---
+// "Focus" means: move closer than a regular fit, keeping the element centered.
+// We keep the whole element in view with a tighter framing (closer camera distance).
+function focusToSelectedIFC(){
+  // Fallback: focus using subset bounding (may be unreliable on some IFC subset implementations).
+  if (ifcSubset){
+    focusToObject(ifcSubset, { tightness: 0.12, animateMs: 380 });
+    return true;
+  }
+  return false;
+}
+
+// Focus by a world-space point (robust): zoom-in toward the clicked element point,
+// regardless of subset bounding boxes.
+// Shared camera tween used by focusToPoint, focusToObject and setViewOrientation.
+// Handles the animate-vs-instant branch and the cancellation token in one place,
+// instead of each caller re-implementing its own easing/RAF loop.
+function animateCamera(opts){
+  const { toPos, toTarget, toUp = null, durationMs = 320, statusText = "Focused" } = opts || {};
+  if (!camera || !controls || !toPos || !toTarget) return;
+
+  const startPos = camera.position.clone();
+  const startTarget = controls.target.clone();
+  const startUp = toUp ? camera.up.clone() : null;
+
+  if (!durationMs || durationMs <= 0){
+    ++cameraAnimToken; // cancel any in-flight camera animation
+    camera.position.copy(toPos);
+    controls.target.copy(toTarget);
+    if (toUp){ camera.up.copy(toUp).normalize(); camera.lookAt(controls.target); }
+    controls.update();
+    setStatus(statusText);
+    return;
+  }
+
+  const myToken = ++cameraAnimToken;
+  const t0 = performance.now();
+  function step(){
+    if (myToken !== cameraAnimToken) return; // a newer camera animation took over
+    const t = (performance.now() - t0) / durationMs;
+    const k = (t >= 1) ? 1 : (1 - Math.pow(1 - t, 3)); // easeOutCubic
+    camera.position.lerpVectors(startPos, toPos, k);
+    controls.target.lerpVectors(startTarget, toTarget, k);
+    if (toUp){
+      camera.up.lerpVectors(startUp, toUp, k).normalize();
+      camera.lookAt(controls.target);
+    }
+    controls.update();
+    if (k < 1) requestAnimationFrame(step);
+    else setStatus(statusText);
+  }
+  requestAnimationFrame(step);
+}
+
+function focusToPoint(worldPoint, opts = {}){
+  if (!worldPoint || !camera || !controls) return;
+
+  const animateMs = (typeof opts.animateMs === "number") ? opts.animateMs : 320;
+  const zoomFactor = (typeof opts.zoomFactor === "number") ? opts.zoomFactor : 0.12; // smaller => closer
+  const minDist = (typeof opts.minDist === "number") ? opts.minDist : 0.15;
+
+  // Keep current view direction (from target to camera).
+  let dir = new THREE.Vector3().subVectors(camera.position, controls.target);
+  const currentDist = dir.length();
+  if (!isFinite(currentDist) || currentDist < 1e-6){
+    dir.set(1, 0.35, 1);
+  }
+  dir.normalize();
+
+  // Compute new distance.
+  let dist = Math.max(minDist, currentDist * zoomFactor);
+
+  // Respect orbit controls constraints.
+  if (controls && typeof controls.minDistance === "number") dist = Math.max(dist, controls.minDistance);
+  if (controls && typeof controls.maxDistance === "number") dist = Math.min(dist, controls.maxDistance);
+
+  const endTarget = worldPoint.clone();
+  const endPos = endTarget.clone().add(dir.multiplyScalar(dist));
+
+  // Adjust clipping planes to reduce near clipping when very close.
+  const desiredNear = Math.max(0.005, dist / 40);
+  const desiredFar  = Math.max(500, dist * 200);
+  if (Math.abs(camera.near - desiredNear) > 1e-6 || Math.abs(camera.far - desiredFar) > 1e-6){
+    camera.near = desiredNear;
+    camera.far = desiredFar;
+    camera.updateProjectionMatrix();
+  }
+
+  if (!animateMs || animateMs <= 0){
+    animateCamera({ toPos: endPos, toTarget: endTarget, durationMs: 0, statusText: "Focused" });
+    return;
+  }
+
+  animateCamera({ toPos: endPos, toTarget: endTarget, durationMs: animateMs, statusText: "Focused" });
+}
+
+function onCanvasDoubleClick(ev){
+  // Double click: select the element under the cursor, then do a true "zoom-in focus" to that element point.
+  ev.preventDefault?.();
+
+  if (!canvas || !camera) return;
+  const rect = canvas.getBoundingClientRect();
+  mouseNDC.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+  mouseNDC.y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
+
+  raycaster.setFromCamera(mouseNDC, camera);
+  const hits = raycaster.intersectObjects(ifcModels, true);
+  if (!hits.length){
+    resetCamera();
+    return;
+  }
+
+  // Ensure selection/highlight/properties match the element the user double-clicked.
+  const info = getExpressIdFromIntersection(hits[0]);
+  if (info){
+    highlightIFC(info.modelID, info.expressID);
+    showIFCProperties(info.modelID, info.expressID);
+  }
+
+  // Robust focus: use the actual hit point in world space (prevents focusing the whole model center).
+  focusToPoint(hits[0].point, { zoomFactor: 0.12, animateMs: 340, minDist: 0.12 });
+}
+
+// Mobile: approximate "double click" using double-tap (within 320ms)
+let _lastTapTime = 0;
+let _lastTapXY = { x: 0, y: 0 };
+function onCanvasPointerUpForDoubleTap(ev){
+  if (ev.pointerType !== "touch") return;
+  const now = performance.now();
+  const dt = now - _lastTapTime;
+  const dx = Math.abs(ev.clientX - _lastTapXY.x);
+  const dy = Math.abs(ev.clientY - _lastTapXY.y);
+
+  _lastTapTime = now;
+  _lastTapXY.x = ev.clientX;
+  _lastTapXY.y = ev.clientY;
+
+  // 2 taps close in time and space => focus the element under the finger
+  if (dt > 40 && dt < 320 && dx < 18 && dy < 18){
+    if (!canvas || !camera) return;
+    const rect = canvas.getBoundingClientRect();
+    mouseNDC.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseNDC.y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
+
+    raycaster.setFromCamera(mouseNDC, camera);
+    const hits = raycaster.intersectObjects(ifcModels, true);
+    if (!hits.length){ resetCamera(); return; }
+
+    const info = getExpressIdFromIntersection(hits[0]);
+    if (info){
+      highlightIFC(info.modelID, info.expressID);
+      showIFCProperties(info.modelID, info.expressID);
+    }
+
+    focusToPoint(hits[0].point, { zoomFactor: 0.12, animateMs: 320, minDist: 0.12 });
+  }
+}
+
+
+function setAutoRotate(enabled){
+  autoRotate = !!enabled;
+  if (el.btnRotate) el.btnRotate.textContent = autoRotate ? "Rotate: On" : "Rotate: Off";
+  try{ localStorage.setItem(AUTO_ROTATE_KEY, autoRotate ? "1" : "0"); }catch(_){}
+}
+
+    function isMobileLike(){
+      return matchMedia("(max-width: 720px)").matches;
+    }
+
+    function qualityToScale(level){
+      // Conservative caps on mobile to avoid GPU overload
+      const mobile = isMobileLike();
+      switch(level){
+        case "low": return 0.75;
+        case "medium": return 1.0;
+        case "high": return mobile ? 1.15 : 1.5;
+        case "ultra": return mobile ? 1.25 : 2.0;
+        default: return mobile ? 1.15 : 1.5;
+      }
+    }
+
+    function applyQuality(level){
+      qualityLevel = (level === "low" || level === "medium" || level === "high" || level === "ultra") ? level : "high";
+      const scale = qualityToScale(qualityLevel);
+
+      // Base DPR with cap (critical on mobile)
+      const base = Math.min(window.devicePixelRatio || 1, isMobileLike() ? 1.5 : 2.0);
+      currentPixelRatio = base * scale;
+
+      if (renderer) renderer.setPixelRatio(currentPixelRatio);
+      if (composer && composer.setPixelRatio) composer.setPixelRatio(currentPixelRatio);
+
+      // FXAA enabled except in low mode
+      if (fxaaPass) fxaaPass.enabled = (qualityLevel !== "low");
+
+      try{ localStorage.setItem(QUALITY_KEY, qualityLevel); }catch(_){}
+      resize();
+    }
+
+    function applySmoothShading(enabled){
+      smoothEnabled = !!enabled;
+      try{ localStorage.setItem(SMOOTH_KEY, smoothEnabled ? "1" : "0"); }catch(_){}
+
+      if (!currentModel) return;
+
+      currentModel.traverse((obj) => {
+        if (!obj.isMesh) return;
+
+        const g = obj.geometry;
+        if (smoothEnabled && g && g.computeVertexNormals){
+          // Improves lighting smoothness without changing geometry
+          g.computeVertexNormals();
+          g.normalsNeedUpdate = true;
+        }
+
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        for (const m of mats){
+          if (!m) continue;
+          // Avoid faceted look when possible
+          if ("flatShading" in m) m.flatShading = smoothEnabled ? false : m.flatShading;
+          m.needsUpdate = true;
+        }
+      });
+    }
+
+    function upgradeMaterialsToPBR(model){
+      // Goal: get a "Revit-like" shaded look without changing the UI.
+      // - Ensure meshes use MeshStandardMaterial (PBR)
+      // - Preserve original colors when present
+      // - Apply a neutral color only when the material looks like a placeholder (pure white, no textures)
+      // - Enable cast/receive shadows
+      const fallback = new THREE.Color(FALLBACK_NEUTRAL_HEX);
+
+      const looksPlaceholderWhite = (mat) => {
+        if (!mat || !mat.color) return false;
+        const c = mat.color;
+        const near = (a,b) => Math.abs(a-b) < 1e-3;
+        const looksWhite = near(c.r, 1) && near(c.g, 1) && near(c.b, 1);
+        const hasTexture = !!(mat.map || mat.emissiveMap || mat.roughnessMap || mat.metalnessMap || mat.normalMap || mat.alphaMap);
+        const usesVertexColors = !!mat.vertexColors;
+        return looksWhite && !hasTexture && !usesVertexColors;
+      };
+
+      const toStandard = (mat) => {
+        const color = (mat && mat.color) ? mat.color.clone() : fallback.clone();
+        if (mat && looksPlaceholderWhite(mat)) color.copy(fallback);
+
+        const std = new THREE.MeshStandardMaterial({
+          color,
+          roughness: 0.88,
+          metalness: 0.03,
+          transparent: !!mat?.transparent,
+          opacity: (typeof mat?.opacity === "number") ? mat.opacity : 1.0,
+          side: mat?.side ?? THREE.FrontSide,
+          vertexColors: !!mat?.vertexColors
+        });
+
+        // Preserve maps if they exist
+        if (mat?.map) std.map = mat.map;
+        if (mat?.emissiveMap) std.emissiveMap = mat.emissiveMap;
+        if (mat?.normalMap) std.normalMap = mat.normalMap;
+        if (mat?.roughnessMap) std.roughnessMap = mat.roughnessMap;
+        if (mat?.metalnessMap) std.metalnessMap = mat.metalnessMap;
+        if (mat?.alphaMap) std.alphaMap = mat.alphaMap;
+
+        std.needsUpdate = true;
+        return std;
+      };
+
+      model.traverse((obj) => {
+        if (!obj.isMesh) return;
+
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+
+        if (Array.isArray(obj.material)){
+          obj.material = obj.material.map(m => (m && m.isMeshStandardMaterial) ? m : toStandard(m));
+        } else {
+          const m = obj.material;
+          obj.material = (m && m.isMeshStandardMaterial) ? m : toStandard(m);
+        }
+      });
+    }
+
+    function applyViewerBackground(hex){
+      const safeHex = (typeof hex === "string" && /^#([0-9a-fA-F]{6})$/.test(hex)) ? hex : DEFAULT_BG_HEX;
+      if (scene) scene.background = new THREE.Color(safeHex);
+      if (el.bgColor) el.bgColor.value = safeHex;
+      try{ localStorage.setItem(BG_STORAGE_KEY, safeHex); }catch(_){}
+    }
+
+    function createFiniteGrid(){
+      const size = 60;
+      const divisions = 60;
+      const grid = new THREE.GridHelper(size, divisions, 0x94a3b8, 0xcbd5e1);
+      grid.material.opacity = 0.35;
+      grid.material.transparent = true;
+      grid.renderOrder = -1;
+      return grid;
+    }
+
+    function createInfiniteGrid(){
+      const geom = new THREE.PlaneGeometry(2, 2, 1, 1);
+      geom.rotateX(-Math.PI / 2);
+
+      const material = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        uniforms: {
+          uMajorStep: { value: 1.0 },
+          uMinorStep: { value: 0.2 },
+          uMajorAlpha: { value: 0.28 },
+          uMinorAlpha: { value: 0.12 },
+          uFadeDistance: { value: 80.0 },
+          uMajorColor: { value: new THREE.Color(0x94a3b8) },
+          uMinorColor: { value: new THREE.Color(0xcbd5e1) }
+        },
+        vertexShader: `
+          varying vec3 vWorldPos;
+          void main(){
+            vec4 worldPos = modelMatrix * vec4(position, 1.0);
+            vWorldPos = worldPos.xyz;
+            gl_Position = projectionMatrix * viewMatrix * worldPos;
+          }
+        `,
+        fragmentShader: `
+          precision highp float;
+          varying vec3 vWorldPos;
+          uniform float uMajorStep;
+          uniform float uMinorStep;
+          uniform float uMajorAlpha;
+          uniform float uMinorAlpha;
+          uniform float uFadeDistance;
+          uniform vec3 uMajorColor;
+          uniform vec3 uMinorColor;
+
+          float gridLine(float stepSize, float width){
+            vec2 coord = vWorldPos.xz / stepSize;
+            vec2 grid = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
+            float line = min(grid.x, grid.y);
+            return 1.0 - clamp(line - width, 0.0, 1.0);
+          }
+
+          void main(){
+            float dist = length(vWorldPos.xz);
+            float fade = 1.0 - smoothstep(uFadeDistance * 0.35, uFadeDistance, dist);
+
+            float minor = gridLine(uMinorStep, 0.5) * uMinorAlpha;
+            float major = gridLine(uMajorStep, 0.7) * uMajorAlpha;
+
+            vec3 col = uMinorColor * minor + uMajorColor * major;
+            float alpha = clamp(minor + major, 0.0, 1.0) * fade;
+
+            if(alpha < 0.01) discard;
+            gl_FragColor = vec4(col, alpha);
+          }
+        `
+      });
+
+      const mesh = new THREE.Mesh(geom, material);
+      mesh.frustumCulled = false;
+      mesh.renderOrder = -2;
+      return mesh;
+    }
+
+    function setGridVisible(visible){
+      gridVisible = !!visible;
+      if (finiteGrid) finiteGrid.visible = gridVisible && (gridMode === "finite");
+      if (infiniteGrid) infiniteGrid.visible = gridVisible && (gridMode === "infinite");
+      const label = gridVisible ? "On" : "Off";
+      if (el.gridToggle) el.gridToggle.textContent = `Grid: ${label}`;
+      try{ localStorage.setItem(GRID_VISIBLE_KEY, gridVisible ? "1" : "0"); }catch(_){}
+    }
+
+    function setGridMode(mode){
+      gridMode = (mode === "infinite") ? "infinite" : "finite";
+      const label = (gridMode === "infinite") ? "Infinite" : "Finite";
+      if (el.gridMode) el.gridMode.textContent = label;
+      if (finiteGrid) finiteGrid.visible = gridVisible && (gridMode === "finite");
+      if (infiniteGrid) infiniteGrid.visible = gridVisible && (gridMode === "infinite");
+      try{ localStorage.setItem(GRID_MODE_KEY, gridMode); }catch(_){}
+    }
+
+    function init(){
+      scene = new THREE.Scene();
+
+      let storedBg = null;
+      try{ storedBg = localStorage.getItem(BG_STORAGE_KEY); }catch(_){}
+      const initialBg = (storedBg && /^#([0-9a-fA-F]{6})$/.test(storedBg)) ? storedBg : DEFAULT_BG_HEX;
+      scene.background = new THREE.Color(initialBg);
+
+      camera = new THREE.PerspectiveCamera(60, 1, 0.1, 2000);
+      camera.position.set(6, 4, 8);
+
+      renderer = new THREE.WebGLRenderer({ canvas: el.canvas, antialias: true, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      currentPixelRatio = renderer.getPixelRatio();
+      // --- Color management + tone mapping (big impact on perceived quality) ---
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05; // tweak 0.85–1.25 to taste
+      renderer.useLegacyLights = false;// physicallyCorrectLights removed in newer Three
+
+      // --- Shadows (depth + realism) ---
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+
+      controls = new OrbitControls(camera, renderer.domElement);
+      renderer.domElement.addEventListener("pointerdown", onCanvasPointerDown, { passive: true });
+      renderer.domElement.addEventListener("pointerup", onCanvasPointerUpForSelect, { passive: true });
+      // Double click to zoom to the currently selected IFC element
+      renderer.domElement.addEventListener("dblclick", onCanvasDoubleClick, { passive: false });
+      // Mobile: double-tap approximation
+      renderer.domElement.addEventListener("pointerup", onCanvasPointerUpForDoubleTap, { passive: true });
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.target.set(0, 1, 0);
+
+      // Postprocessing (FXAA anti-aliasing) + quality control
+      composer = new EffectComposer(renderer);
+      renderPass = new RenderPass(scene, camera);
+      composer.addPass(renderPass);
+
+      fxaaPass = new ShaderPass(FXAAShader);
+      fxaaPass.enabled = true; // controlled by applyQuality
+      composer.addPass(fxaaPass);
+
+      // --- Lighting preset (neutral + "architectural" feel) ---
+      ambientLight = new THREE.AmbientLight(0xffffff, 0.20);
+      scene.add(ambientLight);
+
+      hemiLight = new THREE.HemisphereLight(0xffffff, 0x223344, 0.55);
+      scene.add(hemiLight);
+
+      sunLight = new THREE.DirectionalLight(0xffffff, 2.8);
+      sunLight.position.set(10, 18, 10);
+      sunLight.castShadow = true;
+
+      // shadow tuning (kept conservative to avoid artifacts)
+      sunLight.shadow.mapSize.set(2048, 2048);
+      sunLight.shadow.camera.near = 0.5;
+      sunLight.shadow.camera.far = 250;
+      sunLight.shadow.bias = -0.0002;
+      sunLight.shadow.normalBias = 0.02;
+
+      // expanded shadow camera box; we'll tighten it after loading a model
+      sunLight.shadow.camera.left = -80;
+      sunLight.shadow.camera.right = 80;
+      sunLight.shadow.camera.top = 80;
+      sunLight.shadow.camera.bottom = -80;
+
+      scene.add(sunLight);
+
+      // --- Lighting controls (shadow/brightness) ---
+      const SHADOW_CTRL_KEY = "heliroma_shadow_control";
+      const SHADOW_TOGGLE_KEY = "heliroma_shadows_toggle";
+
+      function applyLightingFromControl(value01){
+        // value01: 0 -> darker/more contrast, 1 -> brighter/less shadow
+        const t = Math.min(1, Math.max(0, value01));
+
+        // Keep a directional key light, but lift the fill + exposure to reduce darkness.
+        if (ambientLight) ambientLight.intensity = 0.10 + 0.65 * t;      // 0.10 → 0.75
+        if (hemiLight)    hemiLight.intensity    = 0.35 + 0.85 * t;      // 0.35 → 1.20
+        if (sunLight)     sunLight.intensity     = 3.20 - 1.35 * t;      // 3.20 → 1.85 (less harsh shadows)
+
+        if (renderer){
+          // Slight exposure lift for brighter models while keeping tonemapping stable.
+          renderer.toneMappingExposure = 1.00 + 0.55 * t;                // 1.00 → 1.55
+        }
+
+        // Update UI text
+        if (el.shadowControlVal){
+          el.shadowControlVal.textContent = Math.round(t * 100) + "%";
+        }
+      }
+
+      function setProjectedShadowsEnabled(enabled){
+        const on = !!enabled;
+        if (renderer) renderer.shadowMap.enabled = on;
+        if (sunLight) sunLight.castShadow = on;
+        if (el.shadowsToggle) el.shadowsToggle.checked = on;
+        if (el.shadowsToggleText) el.shadowsToggleText.textContent = on ? "Sombras ON" : "Sombras OFF";
+        try{ localStorage.setItem(SHADOW_TOGGLE_KEY, on ? "1" : "0"); }catch(_){}
+      }
+
+      // Restore saved lighting settings
+      (function restoreLightingUI(){
+        // Intensity: read the persisted % (default 60, matching the old
+        // slider's initial value="60") and apply it unconditionally — this
+        // used to be nested inside "if (el.shadowControl)", which silently
+        // skipped applyLightingFromControl() entirely once the local
+        // slider moved to index.html, leaving the scene at raw Three.js
+        // constructor defaults instead of the tuned preset.
+        let v = 60;
+        try{
+          const saved = localStorage.getItem(SHADOW_CTRL_KEY);
+          if (saved !== null) v = Math.max(0, Math.min(100, parseInt(saved, 10) || 0));
+        }catch(_){}
+        if (el.shadowControl) el.shadowControl.value = String(v); // harmless if absent
+        applyLightingFromControl(v/100);
+        if (el.shadowControl){
+          el.shadowControl.addEventListener("input", () => {
+            const vv = parseInt(el.shadowControl.value, 10) || 0;
+            applyLightingFromControl(vv/100);
+            try{ localStorage.setItem(SHADOW_CTRL_KEY, String(vv)); }catch(_){}
+          }, { passive:true });
+        }
+
+        let shadowsOn = true;
+        try{
+          const st = localStorage.getItem(SHADOW_TOGGLE_KEY);
+          if (st === "0") shadowsOn = false;
+        }catch(_){}
+        if (el.shadowsToggle){
+          el.shadowsToggle.addEventListener("change", () => {
+            setProjectedShadowsEnabled(el.shadowsToggle.checked);
+          }, { passive:true });
+        }
+        setProjectedShadowsEnabled(shadowsOn);
+      })();
+
+      // ---- Relay for the controls now hosted in index.html (Open IFC /
+      // Escolher ficheiro / Clear / Sombras). applyLightingFromControl and
+      // setProjectedShadowsEnabled are only in scope here, inside init(). ----
+      window.addEventListener("message", (e) => {
+        const data = e.data;
+        if (!data || data.source !== "ifc-viewer-host") return;
+
+        if (data.type === "trigger-open-file"){
+          el.fileInput?.click();
+        } else if (data.type === "trigger-clear"){
+          clearModel();
+        } else if (data.type === "set-shadow-intensity"){
+          const vv = Math.max(0, Math.min(100, Number(data.value) || 0));
+          applyLightingFromControl(vv/100);
+          try{ localStorage.setItem(SHADOW_CTRL_KEY, String(vv)); }catch(_){}
+        } else if (data.type === "set-shadows-enabled"){
+          setProjectedShadowsEnabled(!!data.value);
+        }
+      });
+
+      finiteGrid = createFiniteGrid();
+      infiniteGrid = createInfiniteGrid();
+      scene.add(finiteGrid);
+      scene.add(infiniteGrid);
+
+      let storedVisible = null;
+      let storedMode = null;
+      try{
+        storedVisible = localStorage.getItem(GRID_VISIBLE_KEY);
+        storedMode = localStorage.getItem(GRID_MODE_KEY);
+      }catch(_){}
+      setGridMode(storedMode === "infinite" ? "infinite" : "finite");
+      setGridVisible(storedVisible === "0" ? false : true);
+
+      ifcLoader = new IFCLoader();
+      gltfLoader = new GLTFLoader();
+      // GitHub Pages-friendly: avoid COOP/COEP issues by disabling web workers
+      ifcLoader.ifcManager.useWebWorkers(false);
+      ifcLoader.ifcManager.setWasmPath(WEB_IFC_WASM_PATH);
+
+      // Desktop events
+      if (el.btnLoad) el.btnLoad.addEventListener("click", () => el.fileInput.click()); // btnLoad no longer exists locally (moved to index.html); kept guarded for safety
+      el.fileInput.addEventListener("change", onPickFile);
+      el.btnFit.addEventListener("click", () => { if (currentModel) fitToObject(currentModel); });
+      el.btnReset.addEventListener("click", resetCamera);
+
+      // Status card is truncated by default (long IFC names/GUIDs no longer
+      // stretch it across the viewport); clicking it toggles full text.
+      if (el.status){
+        el.status.addEventListener("click", () => {
+          el.status.classList.toggle("expanded");
+        });
+      }
+      if (el.btnTop) el.btnTop.addEventListener("click", () => setViewOrientation("top"));
+      if (el.btnClear) el.btnClear.addEventListener("click", clearModel); // btnClear no longer exists locally (moved to index.html)
+      // Keyboard shortcut: Backspace (and Space) -> Top view
+      // (ignore when typing in inputs / textareas / contenteditable)
+      window.addEventListener("keydown", (e) => {
+        const tag = (document.activeElement && document.activeElement.tagName || "").toLowerCase();
+        const isTyping = tag === "input" || tag === "textarea" || (document.activeElement && document.activeElement.isContentEditable);
+        if (isTyping) return;
+
+        if (e.code === "Backspace" || e.key === "Backspace" || e.code === "Space") {
+          // Prevent browser back navigation on Backspace
+          e.preventDefault();
+          setViewOrientation("top");
+        }
+      }, { passive: false });
+
+      el.bgColor.addEventListener("input", (e) => applyViewerBackground(e.target.value));
+      el.bgWhite.addEventListener("click", () => applyViewerBackground(DEFAULT_BG_HEX));
+      el.bgDark.addEventListener("click", () => applyViewerBackground(DARK_BG_HEX));
+      el.gridToggle.addEventListener("click", () => setGridVisible(!gridVisible));
+      // Auto-rotate toggle
+      try{ autoRotate = localStorage.getItem(AUTO_ROTATE_KEY) === "1"; }catch(_){ autoRotate = false; }
+      setAutoRotate(autoRotate);
+      if (el.btnRotate) el.btnRotate.addEventListener("click", () => setAutoRotate(!autoRotate));
+      el.gridMode.addEventListener("click", () => setGridMode(gridMode === "finite" ? "infinite" : "finite"));
+
+      applyViewerBackground(initialBg);
+
+      // Restore and wire Quality / Smooth Shading (persisted)
+      let storedQ = null, storedS = null;
+      try{
+        storedQ = localStorage.getItem(QUALITY_KEY);
+        storedS = localStorage.getItem(SMOOTH_KEY);
+      }catch(_){}
+
+      qualityLevel = (storedQ === "low" || storedQ === "medium" || storedQ === "high" || storedQ === "ultra") ? storedQ : "high";
+      smoothEnabled = (storedS === "1");
+
+      if (el.qualitySelect) el.qualitySelect.value = qualityLevel;
+      if (el.smoothShading) el.smoothShading.checked = smoothEnabled;
+
+      if (el.qualitySelect) el.qualitySelect.addEventListener("change", (e) => {
+        applyQuality(e.target.value);
+      });
+      if (el.smoothShading) el.smoothShading.addEventListener("change", (e) => {
+        applySmoothShading(!!e.target.checked);
+      });
+
+      // Apply immediately
+      applyQuality(qualityLevel);
+      applySmoothShading(smoothEnabled);
+
+      window.addEventListener("resize", resize, { passive:true });
+      window.addEventListener("orientationchange", () => setTimeout(resize, 250), { passive:true });
+      resize();
+      renderer.setAnimationLoop(tick);
+
+      el.defaultInfo.textContent = `Default model: ${DEFAULT_IFC_URL.replace("./","")}`;
+      autoLoadDefault();
+
+      setStatus("Ready");
+    }
+
+    function resize(){
+      const w = el.viewer.clientWidth;
+      const h = el.viewer.clientHeight;
+
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(w, h, false);
+
+      if (composer){
+        composer.setSize(w, h);
+
+        // FXAA resolution accounts for pixel ratio
+        if (fxaaPass?.material?.uniforms?.resolution){
+          fxaaPass.material.uniforms.resolution.value.set(
+            1 / (w * currentPixelRatio),
+            1 / (h * currentPixelRatio)
+          );
+        }
+      }
+    }
+
+    function tick(){
+      const dt = Math.min(0.05, clock.getDelta());
+      if (infiniteGrid){
+        // Keep the infinite grid centered on the orbit target and scaled with zoom.
+        infiniteGrid.position.x = controls.target.x;
+        infiniteGrid.position.z = controls.target.z;
+
+        const dist = camera.position.distanceTo(controls.target);
+
+        // Compute a scale that always covers the camera frustum at the grid plane (y=0).
+        // Plane geometry was rotated to XZ: local scale.x -> world X, local scale.y -> world Z.
+        const fovRad = THREE.MathUtils.degToRad(camera.fov * 0.5);
+        const halfH = dist * Math.tan(fovRad);
+        const halfW = halfH * camera.aspect;
+
+        const cover = Math.max(halfW, halfH) * 4.0; // generous coverage so it feels "infinite"
+        const sx = Math.max(50, cover);
+        const sz = Math.max(50, cover);
+
+        infiniteGrid.scale.set(sx, sz, 1);
+
+        // Fade distance tracks zoom so the grid remains legible.
+        if (infiniteGrid.material && infiniteGrid.material.uniforms && infiniteGrid.material.uniforms.uFadeDistance){
+          infiniteGrid.material.uniforms.uFadeDistance.value = Math.max(120.0, Math.max(sx, sz) * 0.9);
+        }
+      }
+
+      // Optional auto-rotation around model center (model is centered at origin).
+      if (autoRotate && currentModel){
+        currentModel.rotation.y += AUTO_ROTATE_SPEED * dt;
+      }
+
+      controls.update();
+
+      if (composer && fxaaPass && fxaaPass.enabled){
+        composer.render();
+      } else {
+        renderer.render(scene, camera);
+      }
+    }
+
+    function resetCamera(){
+      clearError();
+      ++cameraAnimToken; // cancel any in-flight camera animation
+      controls.reset();
+      camera.position.set(6, 4, 8);
+      controls.target.set(0, 1, 0);
+      camera.up.set(0, 1, 0);
+      controls.minPolarAngle = 0;
+      controls.maxPolarAngle = Math.PI;
+      controls.update();
+      setStatus("Ready");
+    }
+
+
+    // Store the model orientation right after load, so we can restore it later (e.g., for Top view).
+    function storeInitialModelOrientation(){
+      if (!currentModel) return;
+      initialModelQuat = currentModel.quaternion.clone();
+    }
+
+    function resetModelOrientationToInitial(){
+      if (!currentModel || !initialModelQuat) return;
+      currentModel.quaternion.copy(initialModelQuat);
+      currentModel.updateMatrixWorld(true);
+    }
+
+    // View presets
+    // Currently supported: "top"
+    function setViewOrientation(view){
+      if (!camera || !controls) return;
+
+      // Always restore the original model orientation before applying a view preset.
+      // This ensures "Top view" is consistent even after rotating the model.
+      if (view === "top") resetModelOrientationToInitial();
+
+      // Prefer model center when available, otherwise keep current target.
+      const target = controls.target.clone();
+      let radius = 1.0;
+      if (currentModel){
+        const box = new THREE.Box3().setFromObject(currentModel);
+        if (isFinite(box.min.x) && isFinite(box.max.x)){
+          const sphere = new THREE.Sphere();
+          box.getBoundingSphere(sphere);
+          if (isFinite(sphere.center.x)) target.copy(sphere.center);
+          if (isFinite(sphere.radius)) radius = Math.max(0.1, sphere.radius);
+        }
+      }
+
+      const curDist = camera.position.distanceTo(controls.target);
+      const dist = Math.max(curDist, radius * 2.2);
+
+      let newPos = camera.position.clone();
+      let newUp = camera.up.clone();
+
+      if (view === "top"){
+        // Look down from +Y, but keep world-up as +Y so OrbitControls doesn't feel "twisted".
+        // We add a tiny horizontal offset to avoid the exact pole singularity (which can cause axis flips).
+        const eps = Math.max(1e-6, dist * 0.0006);
+        newPos = target.clone().add(new THREE.Vector3(0, dist, eps));
+        newUp = new THREE.Vector3(0, 1, 0);
+
+        // Prevent reaching the exact poles (0 or PI) to keep rotation stable.
+        controls.minPolarAngle = 0.001;
+        controls.maxPolarAngle = Math.PI - 0.001;
+      } else {
+        return;
+      }
+
+      const endPos = newPos;
+      const endTarget = target;
+      const endUp = newUp;
+
+      animateCamera({
+        toPos: endPos,
+        toTarget: endTarget,
+        toUp: endUp,
+        durationMs: 320,
+        statusText: view === "top" ? "Top view" : "View"
+      });
+    }
+
+    function clearModel(){
+      clearError();
+      clearIFCSelection();
+      releaseDetachedPanel();
+
+      // Release the IFC data held inside the web-ifc WASM heap. Removing the
+      // Three.js meshes/materials below does NOT free this memory by itself;
+      // each loaded model stays parsed in web-ifc until explicitly closed.
+      // Without this, repeated Open/Clear cycles leak memory indefinitely.
+      if (ifcLoader?.ifcManager?.close){
+        const closedIDs = new Set();
+        for (const m of ifcModels){
+          const modelID = m?.userData?.ifcModelID ?? m?.modelID;
+          if (modelID == null || closedIDs.has(modelID)) continue;
+          closedIDs.add(modelID);
+          try{ ifcLoader.ifcManager.close(modelID); }catch(_){}
+        }
+      }
+      ifcModels = [];
+
+      if (currentModel){
+        scene.remove(currentModel);
+        currentModel.traverse((obj) => {
+          if (obj.isMesh){
+            obj.geometry?.dispose?.();
+            if (Array.isArray(obj.material)) obj.material.forEach(m => m?.dispose?.());
+            else obj.material?.dispose?.();
+          }
+        });
+        currentModel = null;
+      }
+      initialModelQuat = null;
+      if (currentURL){
+        URL.revokeObjectURL(currentURL);
+        currentURL = null;
+      }
+      setStatus("Cleared");
+    }
+
+    function fitToObject(object3D){
+      const box = new THREE.Box3().setFromObject(object3D);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = camera.fov * (Math.PI / 180);
+      let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2)));
+      cameraZ *= 1.4;
+
+      camera.position.set(center.x + cameraZ, center.y + cameraZ * 0.5, center.z + cameraZ);
+      controls.target.copy(center);
+      controls.update();
+      setStatus("Fitted");
+    }
+
+
+    // Focus camera on an object, closer than a normal "fit", while keeping it fully in view.
+    // tightness: 1.0 ~= fit (sphere just fits); smaller => closer (tighter framing).
+    // animateMs: 0 disables animation.
+    function focusToObject(object3D, opts = {}){
+      const tightness = (typeof opts.tightness === "number") ? opts.tightness : 0.85;
+      const animateMs = (typeof opts.animateMs === "number") ? opts.animateMs : 350;
+
+      const box = new THREE.Box3().setFromObject(object3D);
+      if (!isFinite(box.min.x) || !isFinite(box.max.x)) return;
+
+      const sphere = new THREE.Sphere();
+      box.getBoundingSphere(sphere);
+
+      const center = sphere.center.clone();
+      const radius = Math.max(0.001, sphere.radius);
+
+      // Effective FOV limited by aspect ratio (so it also fits horizontally).
+      const vFov = camera.fov * (Math.PI / 180);
+      const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+      const minFov = Math.min(vFov, hFov);
+
+      // Distance for a sphere to fit in view; then apply tighter framing.
+      let dist = radius / Math.sin(minFov / 2);
+      dist *= Math.max(0.08, Math.min(1.0, tightness));
+
+      // Never go inside the object; keep a small margin.
+      const minDistFromSurface = radius * 1.001;
+      dist = Math.max(dist, minDistFromSurface);
+
+      // Respect orbit controls constraints.
+      if (controls && typeof controls.minDistance === "number") dist = Math.max(dist, controls.minDistance);
+      if (controls && typeof controls.maxDistance === "number") dist = Math.min(dist, controls.maxDistance);
+
+      // Move along the current view direction to preserve user orientation.
+      const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+      if (!isFinite(dir.x) || dir.lengthSq() < 1e-8) dir.set(1, 0.35, 1).normalize();
+
+      const newPos = center.clone().add(dir.multiplyScalar(dist));
+
+      // Tune clipping planes a bit to reduce near clipping when very close.
+      const desiredNear = Math.max(0.01, dist / 80);
+      const desiredFar  = Math.max(500, dist + radius * 25);
+      if (Math.abs(camera.near - desiredNear) > 1e-6 || Math.abs(camera.far - desiredFar) > 1e-6){
+        camera.near = desiredNear;
+        camera.far = desiredFar;
+        camera.updateProjectionMatrix();
+      }
+
+      const endPos = newPos;
+      const endTarget = center;
+
+      animateCamera({ toPos: endPos, toTarget: endTarget, durationMs: animateMs, statusText: "Focused" });
+    }
+
+    // Center the loaded models on the grid (world origin) so they always appear in the middle of the grid.
+    // - Moves X/Z so the bounding-box center is at (0,*,0)
+    // - Moves Y so the model sits on y=0 (bbox minY -> 0)
+    function centerModelOnGrid(group){
+      if (!group) return;
+
+      const box = new THREE.Box3().setFromObject(group);
+      if (!isFinite(box.min.x) || !isFinite(box.max.x)) return;
+
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+
+      // Recenter on X/Z (grid plane)
+      group.position.x -= center.x;
+      group.position.z -= center.z;
+
+      // Recompute bbox after move, then place base on y=0
+      const box2 = new THREE.Box3().setFromObject(group);
+      const minY = box2.min.y;
+      if (isFinite(minY)) group.position.y -= minY;
+
+      // Keep orbit target consistent (center-ish) so grid follows nicely.
+      controls.target.set(0, Math.max(0.5, (box2.max.y - box2.min.y) * 0.35), 0);
+      controls.update();
+    }
+
+    // Creates a "spin rig" so rotation happens around the model's own vertical axis:
+    // - The rig stays at world origin (0,0,0) which is also the center of the grid.
+    // - The loaded group is offset inside the rig so its bbox center (X/Z) is at origin and its base sits on y=0.
+    function makeSpinRig(group){
+      if (!group) return null;
+
+      const box = new THREE.Box3().setFromObject(group);
+      if (!isFinite(box.min.x) || !isFinite(box.max.x)) return null;
+
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      const minY = box.min.y;
+      const height = (box.max.y - box.min.y);
+
+      const rig = new THREE.Object3D();
+      rig.name = "SpinRig";
+
+      // Offset the contents INSIDE the rig (so the rig's origin is the rotation axis).
+      group.position.x -= center.x;
+      group.position.z -= center.z;
+      if (isFinite(minY)) group.position.y -= minY;
+
+      rig.add(group);
+
+      // Orbit target stays near the model's "visual center".
+      controls.target.set(0, Math.max(0.5, height * 0.35), 0);
+
+      return rig;
+    }
+
+
+function ensureGroundAndShadowsFor(model){
+      // Place a large ground plane just below the model to catch shadows,
+      // and tighten the directional light shadow camera for better quality.
+      const box = new THREE.Box3().setFromObject(model);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
+
+      const y = box.min.y - Math.max(0.02 * size.y, 0.05);
+      // Ground plane disabled (requested): no shadow-catcher plane.
+if (sunLight){
+        const r = Math.max(size.x, size.z) * 0.65 + 10;
+        sunLight.shadow.camera.left = -r;
+        sunLight.shadow.camera.right = r;
+        sunLight.shadow.camera.top = r;
+        sunLight.shadow.camera.bottom = -r;
+        sunLight.shadow.camera.far = Math.max(250, size.length() * 6);
+        sunLight.shadow.camera.updateProjectionMatrix();
+      }
+    }
+
+    async function autoLoadDefault(){
+      const onModelLoaded = (model) => {
+        clearModel();
+        model.userData.__isIFC = true;
+        model.userData.ifcModelID = (model.modelID != null ? model.modelID : 0);
+        ifcModels = [model];
+        currentModel = model;
+        storeInitialModelOrientation();
+        upgradeMaterialsToPBR(model);
+        applySmoothShading(smoothEnabled);
+        scene.add(model);
+        centerModelOnGrid(model);
+        ensureGroundAndShadowsFor(model);
+        fitToObject(model);
+        setStatus("Loaded");
+      };
+
+      // Reserva local: só usada quando o fetch() ao ficheiro real não é
+      // possível (ex: aberto com duplo clique em file://) ou falha.
+      const loadEmbeddedFallback = () => {
+        if (typeof window.DEFAULT_IFC_TEXT !== "string" || !window.DEFAULT_IFC_TEXT.length){
+          setStatus("Ready");
+          if (el.defaultInfo) el.defaultInfo.textContent = "Modo local (file://): use Open IFC/Escolher ficheiro para carregar um IFC.";
+          return;
+        }
+        clearError();
+        setStatus("Loading…");
+        try{
+          const blob = new Blob([window.DEFAULT_IFC_TEXT], { type: "application/octet-stream" });
+          const blobUrl = URL.createObjectURL(blob);
+          ifcLoader.load(blobUrl, onModelLoaded, undefined,
+            (err) => showError("Failed to load the embedded default IFC.", err));
+        }catch(err){
+          showError("Unexpected error while loading the embedded default IFC", err);
+        }
+      };
+
+      if (location.protocol === "file:") {
+        // fetch() é bloqueado em file:// — vai direto para a reserva embutida.
+        loadEmbeddedFallback();
+        return;
+      }
+
+      // Servido por http(s) (ex: GitHub Pages): usar o ficheiro .ifc real.
+      // Assim, atualizar o modelo é só substituir este ficheiro no repositório.
+      clearError();
+      setStatus("Loading…");
+      try{
+        ifcLoader.load(
+          DEFAULT_IFC_URL,
+          onModelLoaded,
+          undefined,
+          (err) => {
+            console.warn("Falha ao carregar o IFC real via fetch, a tentar a cópia embutida:", err);
+            loadEmbeddedFallback();
+          }
+        );
+      }catch(err){
+        loadEmbeddedFallback();
+      }
+    }
+
+    function onPickFile(e){
+      const files = Array.from(e.target.files || []).filter(Boolean);
+      if (!files.length) return;
+
+      clearError();
+      setStatus("Loading…");
+
+      const byExt = (f) => (f.name.split(".").pop() || "").toLowerCase();
+      const ifcFiles = files.filter(f => byExt(f) === "ifc");
+      const glbFiles = files.filter(f => ["glb","gltf"].includes(byExt(f)));
+
+      // Helper: wrap loader callbacks in Promises
+      const loadIFC = (file) => new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        currentURL = url;
+        ifcLoader.load(
+          url,
+          (model) => resolve({ model, url }),
+          undefined,
+          (err) => reject(err)
+        );
+      });
+
+      const loadGLTF = (file) => new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        currentURL = url;
+        gltfLoader.load(
+          url,
+          (gltf) => resolve({ model: (gltf.scene || gltf), url }),
+          undefined,
+          (err) => reject(err)
+        );
+      });
+
+      // Load order: GLB first (visual), IFC after (optional metadata/overlays later)
+      (async () => {
+        try {
+          clearModel();
+
+          // Use a group so we can show both GLB + IFC together if user selects both.
+          const group = new THREE.Group();
+          group.name = "LoadedModels";
+
+          // Load GLB/GLTF (if provided)
+          for (const f of glbFiles) {
+            const { model } = await loadGLTF(f);
+            // Enable shadows (materials from glTF already PBR)
+            model.traverse((obj) => {
+              if (obj.isMesh) {
+                obj.castShadow = true;
+                obj.receiveShadow = true;
+              }
+            });
+            group.add(model);
+          }
+
+          // Load IFC (if provided)
+          for (const f of ifcFiles) {
+            const { model } = await loadIFC(f);
+            model.userData.__isIFC = true;
+            model.userData.ifcModelID = (model.modelID != null ? model.modelID : 0);
+            ifcModels.push(model);
+            upgradeMaterialsToPBR(model);
+            applySmoothShading(smoothEnabled);
+            model.traverse((obj) => {
+              if (obj.isMesh) {
+                obj.castShadow = true;
+                obj.receiveShadow = true;
+              }
+            });
+            group.add(model);
+          }
+
+          // If nothing loaded (wrong extension)
+          if (!group.children.length) {
+            throw new Error("Unsupported file type. Please select .ifc, .glb or .gltf");
+          }
+
+
+          // Build a rig so the model rotates around its own vertical axis while remaining centered on the grid.
+          const spinRig = makeSpinRig(group) || group;
+          if (spinRig === group) {
+            centerModelOnGrid(group);
+            scene.add(group);
+          } else {
+            scene.add(spinRig);
+          }
+          currentModel = spinRig;
+          storeInitialModelOrientation();
+
+          fitToObject(spinRig);
+
+          setStatus("Loaded");
+        } catch (err) {
+          showError("Failed to load the selected file(s).", err);
+          setStatus("Error", false);
+        } finally {
+          if (e.target) e.target.value = "";
+        }
+      })();
+    }
+
+    try{ init(); }catch(err){ showError("Boot error", err); }
+
+    // ---- Small glue for new layout ----
+    // Fullscreen button from index layout.
+    //
+    // A Fullscreen API nativa (`requestFullscreen`) é pouco fiável aqui
+    // porque este documento corre dentro de um <iframe>: no iOS Safari,
+    // suporte a fullscreen para elementos genéricos só chegou no 16.4, e
+    // mesmo nessa versão falha com frequência quando pedido a partir de
+    // um browsing context aninhado (bug conhecido do WebKit) — o pedido
+    // rejeita silenciosamente e o botão parecia não fazer nada. Em vez de
+    // depender só da API nativa, tentamo-la primeiro (com o prefixo
+    // `webkit` para Safari mais antigo) e, se falhar ou não estiver
+    // disponível, caímos num "pseudo-fullscreen": pedimos ao index.html,
+    // por postMessage, para expandir o wrapper do viewport a ecrã inteiro
+    // via CSS puro — funciona de forma idêntica em qualquer browser.
+    let pseudoFsActive = false;
+    const fsBtn = document.getElementById("btnFs");
+    if (fsBtn) {
+      fsBtn.addEventListener("click", async ()=> {
+        if (pseudoFsActive){
+          setPseudoFullscreen(false);
+          return;
+        }
+        if (document.fullscreenElement){
+          try { await document.exitFullscreen(); } catch(_){}
+          return;
+        }
+        const requestFs = document.documentElement.requestFullscreen
+          || document.documentElement.webkitRequestFullscreen;
+        const canTryNative = document.fullscreenEnabled !== false && typeof requestFs === "function";
+        if (canTryNative){
+          try {
+            await requestFs.call(document.documentElement);
+            return; // sucesso — onFullscreenChange trata do resto
+          } catch(_){ /* cai para o fallback abaixo */ }
+        }
+        setPseudoFullscreen(true);
+      });
+    }
+    function setPseudoFullscreen(active){
+      pseudoFsActive = active;
+      try {
+        window.parent.postMessage({ source: "ifc-viewer", type: "pseudo-fullscreen", value: active }, "*");
+      } catch(_){}
+      // Evento local (não postMessage) para o painel de propriedades
+      // reagir do mesmo modo que reage a "fullscreenchange" nativo —
+      // desacoplado por evento em vez de chamada direta, porque este
+      // handler vive num bloco de topo diferente de initPropsPanelUI.
+      document.dispatchEvent(new CustomEvent("viewer:pseudofschange", { detail: { active } }));
+    }
+
+    // ---- Draggable IFC properties panel + close button ----
+    (function initPropsPanelUI(){
+      const panel = document.getElementById("propsPanel");
+      const closeBtn = document.getElementById("propsClose");
+      const minBtn = document.getElementById("propsMin");
+      const detachBtn = document.getElementById("propsDetach");
+      const body = document.getElementById("propsBody");
+
+      if (closeBtn && panel){
+        closeBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          panel.style.display = "none";
+        });
+      }
+      if (detachBtn && panel && body){
+        detachBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (document.fullscreenElement) return; // indisponível durante tela cheia
+          if (!body.innerHTML.trim()) return; // nada selecionado, nada a destacar
+          panelDetached = true;
+          panel.style.display = "none";
+          try {
+            window.parent.postMessage({ source: "ifc-viewer", type: "props-detach", html: body.innerHTML }, "*");
+          } catch(_){}
+        });
+      }
+
+      // Mensagens vindas do index.html (painel flutuante reancorado ou fechado)
+      window.addEventListener("message", (e) => {
+        const data = e.data;
+        if (!data || data.source !== "ifc-viewer-host" || !panel) return;
+
+        if (data.type === "reattach"){
+          panelDetached = false;
+          if (body && body.innerHTML.trim()) panel.style.display = "block";
+        } else if (data.type === "close"){
+          // Fechar no painel flutuante = limpar seleção também dentro do viewer
+          panelDetached = false;
+          clearIFCSelection();
+        }
+      });
+
+      // ---- Tela cheia cancela o "fixar": o painel destacado vive no
+      // index.html (documento pai), que deixa de ser desenhado assim que
+      // este documento (viewer.html) entra em fullscreen. Sem isto, o
+      // utilizador perderia o acesso ao painel enquanto durasse o fullscreen.
+      // Reage tanto à Fullscreen API nativa como ao fallback "pseudo-fullscreen"
+      // (ver setPseudoFullscreen) — o pseudo-fullscreen também cobre o
+      // index.html por cima, logo o painel destacado fica igualmente
+      // inacessível e precisa do mesmo tratamento. ----
+      function onFullscreenChange(pseudoActive){
+        const isFullscreen = !!document.fullscreenElement || !!pseudoActive;
+
+        if (detachBtn){
+          detachBtn.classList.toggle("is-disabled", isFullscreen);
+          detachBtn.title = isFullscreen
+            ? "Indisponível em tela cheia"
+            : "Destacar (arrastar por toda a tela)";
+        }
+
+        if (isFullscreen && panelDetached){
+          panelDetached = false;
+          if (body && body.innerHTML.trim()) panel.style.display = "block";
+          try { window.parent.postMessage({ source: "ifc-viewer", type: "panel-reclaimed" }, "*"); } catch(_){}
+          setStatus("Tela cheia: painel reancorado automaticamente", true);
+        }
+      }
+      document.addEventListener("fullscreenchange", () => onFullscreenChange(false));
+      document.addEventListener("viewer:pseudofschange", (e) => onFullscreenChange(e.detail && e.detail.active));
+      if (minBtn && panel){
+        minBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const collapsed = panel.classList.toggle("collapsed");
+          minBtn.textContent = collapsed ? "+" : "–";
+          minBtn.title = collapsed ? "Expandir" : "Minimizar";
+        });
+      }
+
+      const header = panel?.querySelector(".ph");
+      if (!panel || !header) return;
+
+      let dragging = false;
+      let pointerId = null;
+      let offsetX = 0, offsetY = 0;
+
+      const onMove = (e) => {
+        if (!dragging) return;
+        // Keep within viewport
+        const x = Math.max(8, Math.min(window.innerWidth  - panel.offsetWidth  - 8, e.clientX - offsetX));
+        const y = Math.max(8, Math.min(window.innerHeight - panel.offsetHeight - 8, e.clientY - offsetY));
+
+        panel.style.right = "auto"; // switch from right-anchored to left-anchored once dragged
+        panel.style.left = `${x}px`;
+        panel.style.top  = `${y}px`;
+      };
+
+      const endDrag = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        header.style.cursor = "grab";
+        try { header.releasePointerCapture(pointerId); } catch(_) {}
+        pointerId = null;
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", endDrag);
+        window.removeEventListener("pointercancel", endDrag);
+      };
+
+      header.addEventListener("pointerdown", (e) => {
+        // Don't start drag when clicking the close/minimize/detach buttons
+        if (e.target && (e.target.id === "propsClose" || e.target.closest?.("#propsClose"))) return;
+        if (e.target && (e.target.id === "propsMin" || e.target.closest?.("#propsMin"))) return;
+        if (e.target && (e.target.id === "propsDetach" || e.target.closest?.("#propsDetach"))) return;
+
+        // Only left click / primary touch
+        if (e.button != null && e.button !== 0) return;
+
+        const rect = panel.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+
+        dragging = true;
+        pointerId = e.pointerId;
+        header.style.cursor = "grabbing";
+        try { header.setPointerCapture(pointerId); } catch(_) {}
+
+        // Ensure left/top are initialized for smooth movement
+        panel.style.right = "auto";
+        panel.style.left = `${rect.left}px`;
+        panel.style.top  = `${rect.top}px`;
+
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", endDrag);
+        window.addEventListener("pointercancel", endDrag);
+      });
+    })();
+
+  </script>
+</body>
+</html>
