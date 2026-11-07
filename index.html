@@ -1018,15 +1018,15 @@ window.isViewerMsg = (e, iframe) => e.source === iframe.contentWindow &&
   const closeBtn = document.getElementById('modelsClose');
   if (!iframe || !stage || !panel || !list) return;
 
-  // Lista de modelos. Os modelos 1 e 2 ainda apontam para o IFC original
-  // (placeholders); o 3 e o 4 já são os ficheiros finais. Para trocar um,
-  // basta mudar `url` (caminho relativo, ao lado do viewer.html — em GitHub
-  // Pages o nome tem de bater exatamente, maiúsculas incluídas) e `name`.
+  // Lista de modelos. Os .ifc não estão no repositório: o viewer tenta o .ifc
+  // e, se não existir (404), carrega a cópia embutida "<nome>-data.js" que está
+  // ao lado do viewer.html. Convenção: "./X.ifc" ↔ "./X-data.js" (maiúsculas
+  // incluídas). Para acrescentar um modelo: gerar X-data.js e juntar aqui uma linha.
   const MODELS = [
-    { id:'m1', name:'PP-R', url:'./3D-Model.ifc' },
-    { id:'m2', name:'RED-FIRE', url:'./3D-Model1.ifc' },
-    { id:'m3', name:'MULTICAMDA', url:'./3D-Model2.ifc' },
-    { id:'m4', name:'ULTRA-SILENT', url:'./3D-Model3.ifc' }
+    { id:'m1', name:'PP-R', url:'./3D-Model.ifc' },          // 3D-Model-data.js
+    { id:'m2', name:'RED-FIRE', url:'./RED-FIRE.ifc' },      // RED-FIRE-data.js
+    { id:'m4', name:'ULTRA-SILENT', url:'./ULTRA-SILENT.ifc' } // ULTRA-SILENT-data.js
+    // MULTILAYER: ainda sem modelo (falta MULTILAYER-data.js).
   ];
   let activeId = MODELS[0].id;
 
