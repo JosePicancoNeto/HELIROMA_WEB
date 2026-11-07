@@ -1,6 +1,8 @@
 /* theme.js — alternância claro/escuro (claro = padrão).
    Carregar no <head>, SEM defer/async, para aplicar o tema antes do primeiro paint.
-   Escolha guardada em localStorage["heliroma_theme"] ("light" | "dark"), partilhada entre páginas. */
+   Escolha guardada em localStorage["heliroma_theme"] ("light" | "dark"), partilhada entre páginas.
+   O botão #themeToggle já vem no HTML da navbar (.hx-nav); aqui só se liga o clique.
+   Se uma página antiga não o tiver, é criado junto à etiqueta do canto (compatibilidade). */
 (function () {
   var KEY = 'heliroma_theme';
   var root = document.documentElement;
@@ -31,29 +33,34 @@
     '<svg class="ic-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/>' +
     '<path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 
-  function mount() {
-    if (document.getElementById('themeToggle')) return;
-    // A etiqueta do canto superior direito existe em todas as páginas (nome de classe varia).
-    var tag = document.querySelector('.nav-eyebrow, .eyebrow-tag');
-    if (!tag || !tag.parentNode) return;
-
-    var wrap = document.createElement('div');
-    wrap.className = 'theme-right';
-
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.id = 'themeToggle';
-    b.className = 'theme-toggle';
-    b.innerHTML = ICONS;
+  function wire(b) {
+    if (b.dataset.wired) return;
+    b.dataset.wired = '1';
     b.addEventListener('click', function () {
       var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       save(next);
       apply(next);
     });
+  }
 
-    tag.parentNode.insertBefore(wrap, tag);
-    wrap.appendChild(b);
-    wrap.appendChild(tag);
+  function mount() {
+    var b = document.getElementById('themeToggle');
+    if (!b) {
+      // Compatibilidade: páginas ainda sem a navbar única.
+      var tag = document.querySelector('.nav-eyebrow, .eyebrow-tag');
+      if (!tag || !tag.parentNode) return;
+      var wrap = document.createElement('div');
+      wrap.className = 'theme-right';
+      b = document.createElement('button');
+      b.type = 'button';
+      b.id = 'themeToggle';
+      b.className = 'theme-toggle';
+      b.innerHTML = ICONS;
+      tag.parentNode.insertBefore(wrap, tag);
+      wrap.appendChild(b);
+      wrap.appendChild(tag);
+    }
+    wire(b);
     apply(read());
   }
 

@@ -1,0 +1,257 @@
+/* nav.css — navbar única de todas as páginas (Heliroma).
+   Carregar DEPOIS dos <style> da página e do theme.css (último <link> do <head>).
+
+   Porque é que a navbar já não "salta" ao mudar de página:
+   1. Markup idêntico em todas as páginas (só muda a aba ativa).
+   2. Classes próprias (.hx-*) com TODAS as propriedades explícitas: a regra
+      `* { font-family: ... }`, o preflight do Tailwind e o CSS antigo de cada
+      página deixam de a afetar.
+   3. Altura fixa (72px / 60px) e caixa fixa para o logótipo: o tamanho não
+      depende do carregamento da imagem nem das fontes.
+   4. Fallback 'Courier New' (mesma largura de carácter que IBM Plex Mono,
+      0,6em): a troca de fonte não altera a largura das abas.
+   5. Barra de scroll com a mesma largura e espaço sempre reservado: o centro
+      da página não se desloca entre páginas com e sem scroll.
+   6. Botão de tema já no HTML (antes era inserido por JS depois do 1.º paint). */
+
+/* ---------- Base comum a todas as páginas ---------- */
+html{
+  scrollbar-gutter:stable;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(0,165,91,.5) #EEF6F1;
+}
+html[data-theme="dark"]{ scrollbar-color:rgba(255,138,0,.5) #0f2a47; }
+body{ margin:0; }
+
+/* Navegação entre páginas sem "piscar" a navbar (Chrome/Edge 126+, Safari 18.2+;
+   ignorado nos restantes e em file://). Sem animação: troca instantânea. */
+@view-transition{ navigation:auto; }
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*){ animation:none; }
+
+/* ---------- Tokens (claro = padrão, escuro = original) ---------- */
+.hx-nav{
+  --hx-bg:rgba(255,255,255,.88);
+  --hx-line:#C5DDCF;
+  --hx-fg:#0a1f33;
+  --hx-dim:#4a5f73;
+  --hx-accent:#00A55B;
+  --hx-accent-dim:#007a43;
+  --hx-on-accent:#FFFFFF;
+  --hx-overlay:#FFFFFF;
+}
+html[data-theme="dark"] .hx-nav{
+  --hx-bg:rgba(10,31,51,.6);
+  --hx-line:#2c4a66;
+  --hx-fg:#edeff2;
+  --hx-dim:#a9b7c6;
+  --hx-accent:#ff8a00;
+  --hx-accent-dim:#b45f00;
+  --hx-on-accent:#0a1f33;
+  --hx-overlay:#0a1f33;
+}
+
+/* ---------- Reset local (blinda contra o CSS de cada página) ---------- */
+.hx-nav, .hx-nav *, .hx-nav *::before, .hx-nav *::after{
+  box-sizing:border-box;
+  margin:0;
+  font-family:'IBM Plex Mono','Courier New',monospace;
+  font-weight:500;
+  font-style:normal;
+  line-height:1;
+  text-transform:none;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- Barra ---------- */
+.hx-nav{
+  position:sticky;
+  top:0;
+  z-index:100;
+  height:72px;
+  border-bottom:1px solid var(--hx-line);
+  view-transition-name:hx-nav;
+}
+/* Blur no ::before e não no próprio .hx-nav: um backdrop-filter no ancestral
+   confinaria o overlay mobile (position:fixed) à faixa do cabeçalho. */
+.hx-nav::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:var(--hx-bg);
+  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(6px);
+}
+.hx-row{
+  height:100%;
+  max-width:1160px;
+  margin:0 auto;
+  padding:0 24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Logótipo: caixa fixa → nada se mexe enquanto a imagem carrega */
+.hx-brand{
+  flex:none;
+  display:block;
+  width:190px;   /* logo-heliroma.png 480×101 → 190×40 */
+  height:40px;
+  margin-right:32px;
+  text-decoration:none;
+  color:var(--hx-fg);
+}
+.hx-brand img{
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:none;
+  object-fit:contain;
+  object-position:left center;
+  border:0;
+}
+
+/* Abas */
+.hx-tabs{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:0;
+  list-style:none;
+}
+.hx-tab{
+  display:inline-flex;
+  align-items:center;
+  height:32px;
+  padding:0 14px;
+  white-space:nowrap;
+  font-size:12px;
+  letter-spacing:.04em;
+  text-decoration:none;
+  color:var(--hx-dim);
+  background:transparent;
+  border:1px solid var(--hx-line);
+  border-radius:2px;
+  transition:color .15s ease, border-color .15s ease, background-color .15s ease;
+}
+.hx-tab:hover{ color:var(--hx-fg); border-color:var(--hx-accent-dim); }
+.hx-tab[aria-current="page"],
+.hx-tab.is-active{
+  color:var(--hx-on-accent);
+  background:var(--hx-accent);
+  border-color:var(--hx-accent);
+}
+
+/* Lado direito: tema + etiqueta */
+.hx-right{
+  flex:none;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-left:24px;
+}
+.hx-nav .theme-toggle,
+.hx-burger,
+.hx-close{
+  flex:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:36px;
+  height:36px;
+  padding:0;
+  background:transparent;
+  border:1px solid var(--hx-line);
+  border-radius:2px;
+  color:var(--hx-fg);
+  font-size:16px;
+  cursor:pointer;
+  touch-action:manipulation;
+  transition:color .15s ease, border-color .15s ease;
+}
+.hx-nav .theme-toggle:hover,
+.hx-burger:hover,
+.hx-close:hover{ border-color:var(--hx-accent); color:var(--hx-accent); }
+.hx-nav .theme-toggle svg{
+  width:18px; height:18px;
+  fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+}
+.hx-nav .theme-toggle .ic-sun{ display:none; }
+html[data-theme="dark"] .hx-nav .theme-toggle .ic-moon{ display:none; }
+html[data-theme="dark"] .hx-nav .theme-toggle .ic-sun{ display:inline; }
+.hx-tag{
+  display:inline-flex;
+  align-items:center;
+  height:28px;
+  padding:0 10px;
+  white-space:nowrap;
+  font-size:11px;
+  letter-spacing:.14em;
+  color:var(--hx-dim);
+  border:1px solid var(--hx-line);
+  border-radius:2px;
+}
+
+.hx-burger, .hx-close{ display:none; }
+
+/* ---------- Ecrãs estreitos: menu em overlay ----------
+   1140px = largura que a barra completa ocupa (~1070px + margens). Abaixo
+   disso as abas deixavam de caber e quebravam linha (a barra mudava de
+   altura conforme a largura da janela). */
+@media (max-width:1139.98px){
+  .hx-nav{ height:60px; }
+  .hx-row{
+    display:grid;
+    grid-template-columns:1fr auto 1fr;
+    padding:0 16px;
+  }
+  .hx-brand{ width:143px; height:30px; margin:0; justify-self:start; }
+  .hx-burger{ display:inline-flex; justify-self:center; }
+  .hx-right{ margin:0; justify-self:end; gap:6px; }
+  .hx-nav .theme-toggle{ width:32px; height:32px; }
+  .hx-tag{ height:26px; padding:0 8px; font-size:10px; letter-spacing:.06em; }
+
+  .hx-tabs{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    flex-direction:column;
+    justify-content:center;
+    gap:10px;
+    padding:24px;
+    background:var(--hx-overlay);
+    overflow-y:auto;
+  }
+  .hx-tabs.is-open{ display:flex; }
+  .hx-tab{
+    width:100%;
+    max-width:320px;
+    height:48px;
+    justify-content:center;
+    font-size:14px;
+  }
+  .hx-close{
+    display:inline-flex;
+    position:absolute;
+    top:10px;
+    right:16px;
+    width:40px;
+    height:40px;
+    font-size:20px;
+  }
+  body.hx-nav-open{ overflow:hidden; }
+}
+@media (max-width:379.98px){
+  .hx-tag{ display:none; }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .hx-tab, .hx-nav .theme-toggle{ transition:none; }
+}
+@media print{
+  .hx-nav{ display:none; }
+}

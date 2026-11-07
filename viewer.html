@@ -59,32 +59,9 @@
       .btn{ padding:7px 9px; border-radius:11px; }
     }
 
-    /* --- Menu hambúrguer (todas as larguras) ---
-       Só o botão Fullscreen fica sempre visível; as restantes ações
-       (Reset/Fit/Top/cor/Grid/Rotate/Modelos) vivem num dropdown aberto
-       pelo ☰, para a vista 3D ficar limpa. */
+    /* Os controlos da vista (Isometric/Top/Grid/Modelos/cor) vivem no index.html
+       e comunicam por postMessage; aqui só fica o botão Fullscreen. */
     #actionsBar{ display:flex; align-items:center; gap:10px; }
-    #menuToggle{ display:inline-flex; align-items:center; justify-content:center; width:40px; }
-    #actionsGroup{
-      display:none;
-      position:absolute;
-      right:0;
-      top:calc(100% + 8px);
-      flex-direction:column;
-      align-items:stretch;
-      gap:8px;
-      min-width:160px;
-      padding:10px;
-      border-radius:14px;
-      background:rgba(12,18,32,0.92);
-      border:1px solid rgba(255,255,255,0.12);
-      box-shadow:0 10px 30px rgba(0,0,0,0.35);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      max-width: min(82vw, 320px);
-    }
-    #actionsGroup .btn{ text-align:center; }
-    #actionsBar.open #actionsGroup{ display:flex; }
 
     /* --- Mobile-friendly properties panel (bottom sheet behavior) --- */
     .propsPanel{ max-width: min(420px, calc(100vw - 24px)); max-height: 70vh; }
@@ -238,32 +215,12 @@
 
   <!-- Top-left badge -->
   <div class="badge">
-    <div class="t"><span class="pill">IFC</span> IFC Interactive Viewer</div>
+    <div class="t"><span class="pill">3D</span> INTERACTIVE VIEWER</div>
     <div class="s" id="defaultInfo">Abre um IFC padrão • permite carregar outro ficheiro local</div>
   </div>
 
   <!-- Top-right actions (mapped to viewer.html ids) -->
   <div class="actions" id="actionsBar">
-    <div class="btn" id="menuToggle" title="Menu" aria-label="Menu" role="button" aria-expanded="false">☰</div>
-    <div class="actionsGroup" id="actionsGroup">
-      <div class="btn" id="btnReset">Reset view</div>
-      <div class="btn" id="btnFit">Fit model</div>
-      <div class="btn" id="btnTop">Top view</div>
-
-      <!-- background color picker (viewer.html expects an <input>) -->
-      <label class="btn" style="padding:0; overflow:hidden;">
-        <input id="bgColor" type="color" value="#071224" title="Background color"
-               style="width:100%;height:32px;border:0;background:transparent;cursor:pointer;">
-      </label>
-
-      <!-- optional background presets expected by viewer.html (hidden, but kept for compatibility) -->
-      <button id="bgDark" type="button" style="display:none"></button>
-      <button id="bgWhite" type="button" style="display:none"></button>
-
-      <div class="btn" id="gridToggle">Grid: On</div>
-      <div class="btn" id="btnRotate">Rotate: Off</div>
-      <div class="btn" id="btnModels" title="Escolher outro modelo">Modelos</div>
-    </div>
     <div class="btn primary" id="btnFs">Fullscreen</div>
   </div>
 
@@ -721,6 +678,7 @@ function selectIFCAtClient(clientX, clientY){
   if (!hits.length){
     clearIFCSelection();
     releaseDetachedPanel();
+    releaseFocusLock(); // clique simples no vazio: volta à órbita normal
     setStatus("Ready", true);
     return null;
   }
@@ -737,6 +695,33 @@ function selectIFCAtClient(clientX, clientY){
 // não se moveu entre o pointerdown e o pointerup — isto evita disparar uma
 // seleção sempre que o utilizador começa a orbitar a câmara (OrbitControls)
 // clicando/arrastando a partir de cima de geometria do modelo.
+// Estado "foco" (duplo clique): guarda o alvo/distância anteriores para um
+// clique simples no vazio voltar à órbita normal em torno do modelo.
+let _focusReturn = null; // { dist, target, near, far } | null
+function rememberFocusReturn(){
+  if (_focusReturn || !camera || !controls) return;
+  _focusReturn = {
+    dist: camera.position.distanceTo(controls.target),
+    target: controls.target.clone(),
+    near: camera.near, far: camera.far
+  };
+}
+function releaseFocusLock(){
+  if (!_focusReturn || !camera || !controls) return false;
+  const r = _focusReturn; _focusReturn = null;
+  // Mantém a direção de visualização atual; repõe o alvo e a distância de antes do foco.
+  const dir = new THREE.Vector3().subVectors(camera.position, controls.target);
+  if (dir.lengthSq() < 1e-12) dir.set(1, 0.35, 1);
+  dir.normalize();
+  const tok = cameraAnimToken + 1;
+  animateCamera({ toPos: r.target.clone().add(dir.multiplyScalar(r.dist)), toTarget: r.target, durationMs: 340, statusText: "Ready" });
+  setTimeout(() => {
+    if (cameraAnimToken !== tok || _focusReturn) return;
+    camera.near = r.near; camera.far = r.far; camera.updateProjectionMatrix();
+  }, 380);
+  return true;
+}
+
 const CLICK_MOVE_THRESHOLD_PX = 6;
 const CLICK_MAX_DURATION_MS = 500;
 let _pointerDownInfo = null; // { x, y, t } | null
@@ -823,6 +808,7 @@ function animateCamera(opts){
 
 function focusToPoint(worldPoint, opts = {}){
   if (!worldPoint || !camera || !controls) return;
+  rememberFocusReturn();
 
   const animateMs = (typeof opts.animateMs === "number") ? opts.animateMs : 320;
   const zoomFactor = (typeof opts.zoomFactor === "number") ? opts.zoomFactor : 0.12; // smaller => closer
@@ -874,10 +860,7 @@ function onCanvasDoubleClick(ev){
 
   raycaster.setFromCamera(mouseNDC, camera);
   const hits = raycaster.intersectObjects(ifcModels, true);
-  if (!hits.length){
-    resetCamera();
-    return;
-  }
+  if (!hits.length){ resetCamera(); return; } // duplo clique no vazio: Isometric view (também sai do foco)
 
   // Ensure selection/highlight/properties match the element the user double-clicked.
   const info = getExpressIdFromIntersection(hits[0]);
@@ -1051,11 +1034,21 @@ function setAutoRotate(enabled){
       });
     }
 
+    // Informa o index.html (rótulo do Grid, cor de fundo) — os controlos vivem lá.
+    function postViewerState(){
+      try{
+        window.parent.postMessage({ source:"ifc-viewer", type:"viewer-state",
+          grid: !!gridVisible, bg: (scene && scene.background && scene.background.isColor) ? "#" + scene.background.getHexString() : DEFAULT_BG_HEX
+        }, window.__IFC_HOST_ORIGIN || "*");
+      }catch(_){}
+    }
+
     function applyViewerBackground(hex){
       const safeHex = (typeof hex === "string" && /^#([0-9a-fA-F]{6})$/.test(hex)) ? hex : DEFAULT_BG_HEX;
       if (scene) scene.background = new THREE.Color(safeHex);
       if (el.bgColor) el.bgColor.value = safeHex;
       try{ localStorage.setItem(BG_STORAGE_KEY, safeHex); }catch(_){}
+      postViewerState();
     }
 
     function createFiniteGrid(){
@@ -1139,6 +1132,7 @@ function setAutoRotate(enabled){
       const label = gridVisible ? "On" : "Off";
       if (el.gridToggle) el.gridToggle.textContent = `Grid: ${label}`;
       try{ localStorage.setItem(GRID_VISIBLE_KEY, gridVisible ? "1" : "0"); }catch(_){}
+      postViewerState();
     }
 
     function setGridMode(mode){
@@ -1311,6 +1305,16 @@ function setAutoRotate(enabled){
           try{ localStorage.setItem(SHADOW_CTRL_KEY, String(vv)); }catch(_){}
         } else if (data.type === "set-shadows-enabled"){
           setProjectedShadowsEnabled(!!data.value);
+        } else if (data.type === "view-iso"){
+          resetCamera();
+        } else if (data.type === "view-top"){
+          setViewOrientation("top");
+        } else if (data.type === "toggle-grid"){
+          setGridVisible(!gridVisible);
+        } else if (data.type === "set-bg"){
+          applyViewerBackground(data.value);
+        } else if (data.type === "request-state"){
+          postViewerState();
         }
       });
 
@@ -1337,8 +1341,7 @@ function setAutoRotate(enabled){
       // Desktop events
       if (el.btnLoad) el.btnLoad.addEventListener("click", () => el.fileInput.click()); // btnLoad no longer exists locally (moved to index.html); kept guarded for safety
       el.fileInput.addEventListener("change", onPickFile);
-      el.btnFit.addEventListener("click", () => { if (currentModel) fitToObject(currentModel); });
-      el.btnReset.addEventListener("click", resetCamera);
+      el.btnReset?.addEventListener("click", resetCamera);
 
       // Status card is truncated by default (long IFC names/GUIDs no longer
       // stretch it across the viewport); clicking it toggles full text.
@@ -1363,14 +1366,8 @@ function setAutoRotate(enabled){
         }
       }, { passive: false });
 
-      el.bgColor.addEventListener("input", (e) => applyViewerBackground(e.target.value));
-      el.bgWhite.addEventListener("click", () => applyViewerBackground(DEFAULT_BG_HEX));
-      el.bgDark.addEventListener("click", () => applyViewerBackground(DARK_BG_HEX));
-      el.gridToggle.addEventListener("click", () => setGridVisible(!gridVisible));
       // Auto-rotate toggle
-      try{ autoRotate = localStorage.getItem(AUTO_ROTATE_KEY) === "1"; }catch(_){ autoRotate = false; }
-      setAutoRotate(autoRotate);
-      if (el.btnRotate) el.btnRotate.addEventListener("click", () => setAutoRotate(!autoRotate));
+      autoRotate = false; // botão Rotate removido
       el.gridMode.addEventListener("click", () => setGridMode(gridMode === "finite" ? "infinite" : "finite"));
 
       applyViewerBackground(initialBg);
@@ -1474,6 +1471,7 @@ function setAutoRotate(enabled){
     }
 
     function resetCamera(){
+      _focusReturn = null;
       clearError();
       ++cameraAnimToken; // cancel any in-flight camera animation
       controls.reset();
@@ -1503,6 +1501,7 @@ function setAutoRotate(enabled){
     // Currently supported: "top"
     function setViewOrientation(view){
       if (!camera || !controls) return;
+      _focusReturn = null;
 
       // Always restore the original model orientation before applying a view preset.
       // This ensures "Top view" is consistent even after rotating the model.
@@ -1555,6 +1554,7 @@ function setAutoRotate(enabled){
     }
 
     function clearModel(){
+      _focusReturn = null;
       clearError();
       clearIFCSelection();
       releaseDetachedPanel();
@@ -1594,6 +1594,7 @@ function setAutoRotate(enabled){
     }
 
     function fitToObject(object3D){
+      _focusReturn = null;
       const box = new THREE.Box3().setFromObject(object3D);
       const size = new THREE.Vector3();
       const center = new THREE.Vector3();
@@ -1688,7 +1689,7 @@ function setAutoRotate(enabled){
       if (isFinite(minY)) group.position.y -= minY;
 
       // Keep orbit target consistent (center-ish) so grid follows nicely.
-      controls.target.set(0, Math.max(0.5, (box2.max.y - box2.min.y) * 0.35), 0);
+      _focusReturn = null; controls.target.set(0, Math.max(0.5, (box2.max.y - box2.min.y) * 0.35), 0);
       controls.update();
     }
 
@@ -1717,7 +1718,7 @@ function setAutoRotate(enabled){
       rig.add(group);
 
       // Orbit target stays near the model's "visual center".
-      controls.target.set(0, Math.max(0.5, height * 0.35), 0);
+      _focusReturn = null; controls.target.set(0, Math.max(0.5, height * 0.35), 0);
 
       return rig;
     }

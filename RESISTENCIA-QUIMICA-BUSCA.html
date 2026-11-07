@@ -419,147 +419,6 @@
             font-family: 'IBM Plex Mono', monospace;
         }
 
-        /* ====== NAVBAR DE MÓDULOS (idêntica às outras páginas) ====== */
-        .module-nav{
-            border-bottom:1px solid var(--line);
-            position:sticky;
-            top:0;
-            z-index:50;
-        }
-        /* Blur/translúcido no ::before (não no próprio .module-nav): um
-           backdrop-filter no ancestral cria um novo containing block para
-           descendentes position:fixed, o que confinaria o overlay do menu
-           mobile à faixa do cabeçalho em vez de cobrir o ecrã. */
-        .module-nav::before{
-            content:"";
-            position:absolute;
-            inset:0;
-            z-index:-1;
-            background:rgba(10,31,51,0.6);
-            backdrop-filter:blur(6px);
-        }
-        .module-nav .nav-wrap{
-            max-width:1040px;
-            margin:0 auto;
-            padding:18px 24px;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:16px;
-        }
-        .module-nav .nav-wordmark{
-            font-family:'IBM Plex Mono', monospace;
-            font-weight:600;
-            letter-spacing:0.02em;
-            font-size:15px;
-            color:var(--paper);
-            white-space:nowrap;
-        }
-        .module-nav .nav-wordmark span{ color:var(--accent); }
-        .module-nav .nav-tabs{
-            display:flex;
-            gap:6px;
-            font-family:'IBM Plex Mono', monospace;
-            font-size:12px;
-            letter-spacing:0.04em;
-        }
-        .module-nav .nav-tab{
-            text-decoration:none;
-            color:var(--paper-dim);
-            border:1px solid var(--line);
-            padding:7px 14px;
-            border-radius:var(--radius);
-            transition:color .15s ease, border-color .15s ease, background .15s ease;
-        }
-        .module-nav .nav-tab:hover{
-            color:var(--paper);
-            border-color:var(--accent-dim);
-        }
-        .module-nav .nav-tab.is-active{
-            color:var(--ink-900);
-            background:var(--accent);
-            border-color:var(--accent);
-        }
-        .module-nav .nav-eyebrow{
-            font-family:'IBM Plex Mono', monospace;
-            font-size:11px;
-            letter-spacing:0.14em;
-            color:var(--paper-dim);
-            border:1px solid var(--line);
-            padding:5px 10px;
-            border-radius:var(--radius);
-            white-space:nowrap;
-        }
-
-        /* Ícone de menu — só visível em mobile (ver media query abaixo). */
-        #navMenuToggle{
-            display:none;
-            width:36px; height:36px;
-            align-items:center;
-            justify-content:center;
-            background:transparent;
-            border:1px solid var(--line);
-            border-radius:var(--radius);
-            color:var(--paper);
-            font-size:16px;
-            line-height:1;
-            cursor:pointer;
-            touch-action:manipulation;
-        }
-        #navMenuToggle:hover{ border-color:var(--accent-dim); }
-
-        .nav-close{ display:none; }
-
-        @media (max-width:640px), (pointer:coarse) and (max-height:500px){
-            .module-nav .nav-wrap{
-                display:grid;
-                grid-template-columns:1fr auto 1fr;
-                align-items:center;
-            }
-            .module-nav .nav-wordmark{ grid-column:1; justify-self:start; }
-            #navMenuToggle{ grid-column:2; display:inline-flex; justify-self:center; }
-            .module-nav .nav-eyebrow{ grid-column:3; justify-self:end; }
-
-            .module-nav .nav-tabs{
-                display:none;
-                position:fixed;
-                inset:0;
-                z-index:1000;
-                flex-direction:column;
-                align-items:center;
-                justify-content:center;
-                gap:10px;
-                padding:24px;
-                background:var(--ink-900);
-                overflow-y:auto;
-            }
-            .module-nav .nav-tabs.is-open{ display:flex; }
-            .module-nav .nav-tab{
-                width:100%;
-                max-width:320px;
-                text-align:center;
-                padding:16px 14px;
-                font-size:14px;
-            }
-            .nav-close{
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                position:absolute;
-                top:16px; right:16px;
-                width:40px; height:40px;
-                background:transparent;
-                border:1px solid var(--line);
-                border-radius:var(--radius);
-                color:var(--paper);
-                font-size:20px;
-                line-height:1;
-                cursor:pointer;
-                touch-action:manipulation;
-            }
-            .nav-close:hover{ border-color:var(--accent-dim); }
-        }
-
         @media (prefers-reduced-motion: reduce){
             html{ scroll-behavior:auto; }
         }
@@ -656,48 +515,35 @@
             }
         }
     </style>
+<link rel="stylesheet" href="nav.css">
+<script src="nav.js" defer></script>
 </head>
 <body>
-    <nav class="module-nav" aria-label="Navegação entre módulos">
-        <div class="nav-wrap">
-            <div class="nav-wordmark">IFC<span>///</span>VIEWER</div>
-            <button type="button" id="navMenuToggle" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="navTabs">☰</button>
-            <div class="nav-tabs" id="navTabs">
-                <button type="button" class="nav-close" id="navClose" aria-label="Fechar menu">×</button>
-                <a class="nav-tab" href="index.html">Visualizador IFC</a>
-                <a class="nav-tab" href="HELIROMA-CALC.html">Calculadora PP-R</a>
-                <a class="nav-tab" href="COLETOR-PESO.html">Calculadora de Peso</a>
-                <a class="nav-tab is-active" href="RESISTENCIA-QUIMICA-BUSCA.html">Resistência Química</a>
-            </div>
-            <div class="nav-eyebrow">QUÍMICA</div>
-        </div>
+<header class="hx-nav">
+  <div class="hx-row">
+    <a class="hx-brand" href="index.html" aria-label="Heliroma — página inicial">
+      <img src="logo-heliroma.png" alt="Heliroma by Huliot Group" width="480" height="101">
+    </a>
+
+    <button type="button" class="hx-burger" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="hxTabs">☰</button>
+
+    <nav class="hx-tabs" id="hxTabs" aria-label="Navegação entre módulos">
+      <button type="button" class="hx-close" aria-label="Fechar menu">×</button>
+      <a class="hx-tab" href="index.html">Visualizador IFC</a>
+      <a class="hx-tab" href="HELIROMA-CALC.html">Calculadora PP-R</a>
+      <a class="hx-tab" href="COLETOR-PESO.html">Calculadora de Peso</a>
+      <a class="hx-tab" href="RESISTENCIA-QUIMICA-BUSCA.html" aria-current="page">Resistência Química</a>
     </nav>
-    <script>
-    (function initMobileNav(){
-        const toggle = document.getElementById('navMenuToggle');
-        const nav = document.getElementById('navTabs');
-        const closeBtn = document.getElementById('navClose');
-        if (!toggle || !nav) return;
 
-        function setOpen(open){
-            nav.classList.toggle('is-open', open);
-            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-            document.body.classList.toggle('nav-open', open);
-        }
-
-        toggle.addEventListener('click', () => setOpen(!nav.classList.contains('is-open')));
-        if (closeBtn) closeBtn.addEventListener('click', () => setOpen(false));
-
-        nav.addEventListener('click', (e) => {
-            if (e.target.closest('a') || e.target === nav) setOpen(false);
-        });
-
-        window.addEventListener('resize', () => {
-            if (window.matchMedia('(max-width:640px), (pointer:coarse) and (max-height:500px)').matches) return;
-            setOpen(false);
-        });
-    })();
-    </script>
+    <div class="hx-right">
+      <button type="button" id="themeToggle" class="theme-toggle" aria-label="Ativar modo escuro" title="Ativar modo escuro">
+        <svg class="ic-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="ic-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <span class="hx-tag">TEST DRIVE</span>
+    </div>
+  </div>
+</header>
 
     <div class="content-wrapper">
         <!-- HEADER -->
