@@ -16,8 +16,6 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- html2pdf para exportação PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         * {
@@ -1178,7 +1176,7 @@
                         <form id="inputForm" class="form-wrapper">
                             <!-- PRIMEIRA LINHA DE INPUTS -->
                             <div class="form-row">
-                                <!-- Tipo de Tubo (define α e C a partir de pipes-data.js) -->
+                                <!-- Tipo de Tubo (define α e C a partir de dilatacao-data.js) -->
                                 <div class="form-group">
                                     <label class="label-custom" for="pipeType">Tipo de Tubo</label>
                                     <select id="pipeType" class="w-full">
@@ -1641,8 +1639,12 @@
     <!-- Dados dos intervalos de suporte (tipos de tubo, diâmetros, temperaturas) — ficheiro na mesma pasta -->
     <script src="suportes-data.js"></script>
 
-    <!-- Dados dos tubos (diâmetros, referências, pesos) e constantes de dilatação (C, α) — ficheiro na mesma pasta -->
-    <script src="pipes-data.js"></script>
+    <!-- Tubos (diâmetros): heliroma-data.js, partilhado com COLETOR-PESO. Constantes C e α: dilatacao-data.js -->
+    <script src="heliroma-data.js"></script>
+    <script src="dilatacao-data.js"></script>
+
+    <!-- Abas (botões + seletor mobile) — partilhado com TEORIA-DILATACAO.html -->
+    <script src="tabs.js"></script>
 
     <script>
         // ====================================================================
@@ -1787,10 +1789,12 @@
         // PARÂMETROS DE ENTRADA: TIPO DE TUBO, DIÂMETRO, SISTEMA E ANÁLISE
         // ====================================================================
 
-        // Dados dos tubos: vêm de pipes-data.js (HELIROMA_DATA_EXTERNAL).
-        //   tubos[tipo]     -> [{ dn, ref, weight }]  diâmetros disponíveis do tipo
-        //   dilatacao[tipo] -> { c, alpha }           constante C e coef. α (mm/m·K)
-        const PIPES_DATA = (typeof HELIROMA_DATA_EXTERNAL !== 'undefined') ? HELIROMA_DATA_EXTERNAL : null;
+        // Dados dos tubos (fonte única para as duas calculadoras):
+        //   tubos[tipo]     -> [{ dn, ref, weight }]  de heliroma-data.js (HELIROMA_DATA_EXTERNAL)
+        //   dilatacao[tipo] -> { c, alpha }           de dilatacao-data.js (HELIROMA_DILATACAO)
+        const PIPES_DATA = (window.HELIROMA_DATA_EXTERNAL && window.HELIROMA_DILATACAO)
+            ? { tubos: window.HELIROMA_DATA_EXTERNAL.tubos, dilatacao: window.HELIROMA_DILATACAO }
+            : null;
 
         // Opções de Sistema e Análise (ids usados em DELTA_T_TABLE).
         const SYSTEM_OPTIONS = [
@@ -1834,7 +1838,7 @@
                 typeSelect.disabled = true;
                 typeSelect.options[0].textContent = 'Erro ao carregar os dados';
                 document.getElementById('pipeTypeHelp').textContent =
-                    'Não foi possível carregar pipes-data.js. Confirme que o ficheiro está na mesma pasta desta página.';
+                    'Não foi possível carregar heliroma-data.js / dilatacao-data.js. Confirme que estão na mesma pasta desta página.';
             } else {
                 typeNames.forEach(name => {
                     const option = document.createElement('option');
@@ -1917,7 +1921,7 @@
                 } else if (params.alpha > 0 && params.C > 0) {
                     pipeHelp.textContent = `α = ${params.alpha} mm/m·K · C = ${params.C}`;
                 } else {
-                    pipeHelp.textContent = 'Sem dados de dilatação (α, C) para este tipo em pipes-data.js';
+                    pipeHelp.textContent = 'Sem dados de dilatação (α, C) para este tipo em dilatacao-data.js';
                 }
             }
 
@@ -2029,28 +2033,6 @@
         // ====================================================================
         // SISTEMA DE ABAS
         // ====================================================================
-
-        function setupTabs() {
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-            const tabSelector = document.getElementById('tabSelectorMobile');
-
-            function activateTab(tabName) {
-                tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
-                tabContents.forEach(content => content.classList.toggle('active', content.id === tabName));
-                if (tabSelector && tabSelector.value !== tabName) {
-                    tabSelector.value = tabName;
-                }
-            }
-
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => activateTab(button.dataset.tab));
-            });
-
-            if (tabSelector) {
-                tabSelector.addEventListener('change', () => activateTab(tabSelector.value));
-            }
-        }
 
         // ====================================================================
         // CALCULADORA DE SUPORTE
@@ -2247,33 +2229,19 @@
         // EVENT LISTENERS
         // ====================================================================
 
-        const inputs = [
-            document.getElementById('diameter'),
-            document.getElementById('system'),
-            document.getElementById('analysis'),
-            document.getElementById('totalSpan'),
-            document.getElementById('usefulLength'),
-            document.getElementById('paramN'),
-            document.getElementById('modelType')
-        ];
-
         // Ao mudar o Tipo de Tubo, atualiza primeiro a lista de diâmetros e depois recalcula
         document.getElementById('pipeType').addEventListener('change', function() {
             populatePipeDiameters();
             calculateThermalExpansion();
         });
 
-        inputs.forEach(input => {
-            input.addEventListener('input', calculateThermalExpansion);
-            input.addEventListener('change', function() {
-                if (this.id === 'modelType') {
-                    toggleFieldN();
-                    toggleFieldLu();
-                    toggleResultLc();
-                }
-                calculateThermalExpansion();
-            });
-        });
+        // Um evento por campo (antes cada campo tinha 'input' + 'change' e o Modelo
+        // ainda um terceiro listener: o cálculo corria 2 a 3 vezes por alteração).
+        // Campos numéricos: 'input' (recalcula enquanto escreve). Selects: 'change'.
+        ['totalSpan', 'usefulLength', 'paramN'].forEach(id =>
+            document.getElementById(id).addEventListener('input', calculateThermalExpansion));
+        ['diameter', 'system', 'analysis'].forEach(id =>
+            document.getElementById(id).addEventListener('change', calculateThermalExpansion));
 
         document.getElementById('calculateBtn').addEventListener('click', calculateThermalExpansion);
         document.getElementById('saveCalculationBtn').addEventListener('click', saveCalculation);

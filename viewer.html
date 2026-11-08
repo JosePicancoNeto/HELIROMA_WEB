@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="utf-8" />
@@ -44,13 +44,12 @@
     .btn.primary{ background:rgba(22,117,84,.75); border-color: rgba(46,204,148,.25); }
     .btn.primary:hover{ background:rgba(22,117,84,.9); }
 
-    /* Bottom-left panel (Open IFC / Escolher ficheiro / Clear / Sombras) and
+    /* Bottom-left panel (vistas / grelha / modelos / sombras) and
        bottom-right status card were moved OUT of this document into
        index.html, for an uncluttered 3D view — this iframe now talks to
-       them purely via postMessage (see the "trigger-*"/"set-*" handler in
-       init() and the setStatus()/showError()/clearError() functions). The
-       hidden #fileInput stays here because it must live in this document
-       to open the OS file picker (see #hiddenLegacyControls below). */
+       them purely via postMessage (see the "set-*"/"view-*" handler in
+       init() and the setStatus()/showError()/clearError() functions).
+       Abrir ficheiros locais foi removido (só modelos publicados online). */
 
     /* Mobile tweaks */
     @media (max-width: 560px){
@@ -216,7 +215,7 @@
   <!-- Top-left badge -->
   <div class="badge">
     <div class="t"><span class="pill">3D</span> INTERACTIVE VIEWER</div>
-    <div class="s" id="defaultInfo">Abre um IFC padrão • permite carregar outro ficheiro local</div>
+    <div class="s" id="defaultInfo">A carregar modelo…</div>
   </div>
 
   <!-- Top-right actions (mapped to viewer.html ids) -->
@@ -229,7 +228,6 @@
        viewer's own JS genuinely needs to keep working stay in this
        document, hidden — id="hiddenLegacyControls". -->
   <div id="hiddenLegacyControls" style="display:none">
-    <input id="fileInput" type="file" accept=".ifc,.glb,.gltf" multiple />
     <input id="gridToggleLegacy" type="checkbox" />
     <select id="gridMode"><option value="0">0</option></select>
     <select id="qualitySelect"><option value="high">high</option></select>
@@ -249,11 +247,10 @@
     <div class="pb" id="propsBody"></div>
   </div>
 
-  <!-- 3D-Model-data.js é carregado sob pedido (getEmbeddedIfcText), só em file:// ou se o fetch falhar. -->
+  <!-- Os modelos (X-data.js) são carregados sob pedido por getEmbeddedIfcText(). -->
   <script type="module">
 import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
     import { IFCLoader } from "https://cdn.jsdelivr.net/npm/web-ifc-three@0.0.126/IFCLoader.js";
 
     // Postprocessing (anti-aliasing)
@@ -275,7 +272,6 @@ import * as THREE from "three";
 
     const BG_STORAGE_KEY = "heliroma_viewer_bg";
     const DEFAULT_BG_HEX = "#071224";
-    const DARK_BG_HEX = "#0b1220";
 
     const GRID_VISIBLE_KEY = "heliroma_grid_visible";
     const GRID_MODE_KEY = "heliroma_grid_mode"; // "finite" | "infinite"
@@ -291,10 +287,7 @@ import * as THREE from "three";
       bgWhite: document.getElementById("bgWhite"),
       bgDark: document.getElementById("bgDark"),
       gridToggle: document.getElementById("gridToggle"),
-      btnRotate: document.getElementById("btnRotate"),
       gridMode: document.getElementById("gridMode"),
-      fileInput: document.getElementById("fileInput"),
-      btnLoad: document.getElementById("btnLoad"),
       btnFit: document.getElementById("btnFit"),
       btnReset: document.getElementById("btnReset"),
       btnTop: document.getElementById("btnTop"),
@@ -347,16 +340,14 @@ import * as THREE from "three";
 
     let scene, camera, renderer, controls;
     let ifcLoader;
-    let gltfLoader;
-    let groundPlane = null;
     let sunLight = null;
     let ambientLight = null;
     let hemiLight = null;
     let currentModel = null;
     let initialModelQuat = null; // stores the model orientation at load time
 
-    // Shared cancellation token for camera tweens (setViewOrientation, focusToPoint,
-    // focusToObject). Each animation captures the token value when it starts; if a
+    // Shared cancellation token for camera tweens (setViewOrientation, focusToPoint).
+    // Each animation captures the token value when it starts; if a
     // newer animation begins, the token changes and older loops stop themselves
     // instead of fighting over camera.position/controls.target.
     let cameraAnimToken = 0;
@@ -391,7 +382,6 @@ function getIFCHighlightParent(modelID){
   const root = ifcModels.find(m => (m?.userData?.ifcModelID ?? m?.modelID ?? 0) === modelID) || ifcModels[0];
   return root || scene;
 }
-    let currentURL = null;
 
     let finiteGrid = null;
     let infiniteGrid = null;
@@ -399,11 +389,7 @@ function getIFCHighlightParent(modelID){
     let gridMode = "infinite";
 
     // Auto-rotate around model center (toggle)
-    let autoRotate = false;
-    const AUTO_ROTATE_KEY = "ifcviewer_auto_rotate";
-    const AUTO_ROTATE_SPEED = 0.35; // rad/s
 
-    const clock = new THREE.Clock();
 
     // Postprocessing / Quality
     let composer = null;
@@ -426,7 +412,7 @@ function getIFCHighlightParent(modelID){
     // piece (e.g. clearError() only resets "sub") doesn't clobber the rest.
     let lastStatusText = "Ready";
     let lastStatusOk = true;
-    let lastStatusSub = "Abra um IFC. Use mouse/touch para orbitar/zoom/pan.";
+    let lastStatusSub = "Use rato/toque para orbitar, aproximar e deslocar.";
 
     function postStatusToHost(){
       try {
@@ -448,7 +434,7 @@ function getIFCHighlightParent(modelID){
     }
 
     function clearError(){
-      lastStatusSub = "Abra um IFC. Use mouse/touch para orbitar/zoom/pan.";
+      lastStatusSub = "Use rato/toque para orbitar, aproximar e deslocar.";
       postStatusToHost();
     }
 
@@ -666,8 +652,8 @@ function highlightIFC(modelID, expressID){
 
 
 function selectIFCAtClient(clientX, clientY){
-  if (!canvas || !camera) return null;
-  const rect = canvas.getBoundingClientRect();
+  if (!el.canvas || !camera) return null;
+  const rect = el.canvas.getBoundingClientRect();
   mouseNDC.x = ((clientX - rect.left) / rect.width) * 2 - 1;
   mouseNDC.y = -(((clientY - rect.top) / rect.height) * 2 - 1);
 
@@ -752,21 +738,9 @@ function onCanvasPointerUpForSelect(ev){
 }
 
 
-// --- Focus-to-selection via double click / double tap ---
-// "Focus" means: move closer than a regular fit, keeping the element centered.
-// We keep the whole element in view with a tighter framing (closer camera distance).
-function focusToSelectedIFC(){
-  // Fallback: focus using subset bounding (may be unreliable on some IFC subset implementations).
-  if (ifcSubset){
-    focusToObject(ifcSubset, { tightness: 0.12, animateMs: 380 });
-    return true;
-  }
-  return false;
-}
-
 // Focus by a world-space point (robust): zoom-in toward the clicked element point,
 // regardless of subset bounding boxes.
-// Shared camera tween used by focusToPoint, focusToObject and setViewOrientation.
+// Shared camera tween used by focusToPoint and setViewOrientation.
 // Handles the animate-vs-instant branch and the cancellation token in one place,
 // instead of each caller re-implementing its own easing/RAF loop.
 function animateCamera(opts){
@@ -853,8 +827,8 @@ function onCanvasDoubleClick(ev){
   // Double click: select the element under the cursor, then do a true "zoom-in focus" to that element point.
   ev.preventDefault?.();
 
-  if (!canvas || !camera) return;
-  const rect = canvas.getBoundingClientRect();
+  if (!el.canvas || !camera) return;
+  const rect = el.canvas.getBoundingClientRect();
   mouseNDC.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
   mouseNDC.y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
 
@@ -889,8 +863,8 @@ function onCanvasPointerUpForDoubleTap(ev){
 
   // 2 taps close in time and space => focus the element under the finger
   if (dt > 40 && dt < 320 && dx < 18 && dy < 18){
-    if (!canvas || !camera) return;
-    const rect = canvas.getBoundingClientRect();
+    if (!el.canvas || !camera) return;
+    const rect = el.canvas.getBoundingClientRect();
     mouseNDC.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
     mouseNDC.y = -(((ev.clientY - rect.top) / rect.height) * 2 - 1);
 
@@ -909,11 +883,6 @@ function onCanvasPointerUpForDoubleTap(ev){
 }
 
 
-function setAutoRotate(enabled){
-  autoRotate = !!enabled;
-  if (el.btnRotate) el.btnRotate.textContent = autoRotate ? "Rotate: On" : "Rotate: Off";
-  try{ localStorage.setItem(AUTO_ROTATE_KEY, autoRotate ? "1" : "0"); }catch(_){}
-}
 
     function isMobileLike(){
       return matchMedia("(max-width: 720px)").matches;
@@ -1284,19 +1253,15 @@ function setAutoRotate(enabled){
         setProjectedShadowsEnabled(shadowsOn);
       })();
 
-      // ---- Relay for the controls now hosted in index.html (Open IFC /
-      // Escolher ficheiro / Clear / Sombras). applyLightingFromControl and
+      // ---- Relay for the controls now hosted in index.html (vistas /
+      // grelha / modelos / sombras). applyLightingFromControl and
       // setProjectedShadowsEnabled are only in scope here, inside init(). ----
       window.addEventListener("message", (e) => {
         if (!isTrustedHostMsg(e)) return;
         const data = e.data;
         if (!data || data.source !== "ifc-viewer-host") return;
 
-        if (data.type === "trigger-open-file"){
-          el.fileInput?.click();
-        } else if (data.type === "trigger-clear"){
-          clearModel();
-        } else if (data.type === "load-model"){
+        if (data.type === "load-model"){
           if (typeof data.url === "string" && SAFE_MODEL_URL.test(data.url)) autoLoadDefault(data.url);
           else console.warn("[viewer] load-model rejeitado (URL não permitido):", data.url);
         } else if (data.type === "set-shadow-intensity"){
@@ -1333,14 +1298,11 @@ function setAutoRotate(enabled){
       setGridVisible(storedVisible === "0" ? false : true);
 
       ifcLoader = new IFCLoader();
-      gltfLoader = new GLTFLoader();
       // GitHub Pages-friendly: avoid COOP/COEP issues by disabling web workers
       ifcLoader.ifcManager.useWebWorkers(false);
       ifcLoader.ifcManager.setWasmPath(WEB_IFC_WASM_PATH);
 
       // Desktop events
-      if (el.btnLoad) el.btnLoad.addEventListener("click", () => el.fileInput.click()); // btnLoad no longer exists locally (moved to index.html); kept guarded for safety
-      el.fileInput.addEventListener("change", onPickFile);
       el.btnReset?.addEventListener("click", resetCamera);
 
       // Status card is truncated by default (long IFC names/GUIDs no longer
@@ -1366,8 +1328,6 @@ function setAutoRotate(enabled){
         }
       }, { passive: false });
 
-      // Auto-rotate toggle
-      autoRotate = false; // botão Rotate removido
       el.gridMode.addEventListener("click", () => setGridMode(gridMode === "finite" ? "infinite" : "finite"));
 
       applyViewerBackground(initialBg);
@@ -1401,7 +1361,6 @@ function setAutoRotate(enabled){
       resize();
       renderer.setAnimationLoop(tick);
 
-      el.defaultInfo.textContent = `Default model: ${DEFAULT_IFC_URL.replace("./","")}`;
       autoLoadDefault();
 
       setStatus("Ready");
@@ -1430,7 +1389,6 @@ function setAutoRotate(enabled){
     }
 
     function tick(){
-      const dt = Math.min(0.05, clock.getDelta());
       if (infiniteGrid){
         // Keep the infinite grid centered on the orbit target and scaled with zoom.
         infiniteGrid.position.x = controls.target.x;
@@ -1454,11 +1412,6 @@ function setAutoRotate(enabled){
         if (infiniteGrid.material && infiniteGrid.material.uniforms && infiniteGrid.material.uniforms.uFadeDistance){
           infiniteGrid.material.uniforms.uFadeDistance.value = Math.max(120.0, Math.max(sx, sz) * 0.9);
         }
-      }
-
-      // Optional auto-rotation around model center (model is centered at origin).
-      if (autoRotate && currentModel){
-        currentModel.rotation.y += AUTO_ROTATE_SPEED * dt;
       }
 
       controls.update();
@@ -1586,10 +1539,6 @@ function setAutoRotate(enabled){
         currentModel = null;
       }
       initialModelQuat = null;
-      if (currentURL){
-        URL.revokeObjectURL(currentURL);
-        currentURL = null;
-      }
       setStatus("Cleared");
     }
 
@@ -1612,60 +1561,6 @@ function setAutoRotate(enabled){
       setStatus("Fitted");
     }
 
-
-    // Focus camera on an object, closer than a normal "fit", while keeping it fully in view.
-    // tightness: 1.0 ~= fit (sphere just fits); smaller => closer (tighter framing).
-    // animateMs: 0 disables animation.
-    function focusToObject(object3D, opts = {}){
-      const tightness = (typeof opts.tightness === "number") ? opts.tightness : 0.85;
-      const animateMs = (typeof opts.animateMs === "number") ? opts.animateMs : 350;
-
-      const box = new THREE.Box3().setFromObject(object3D);
-      if (!isFinite(box.min.x) || !isFinite(box.max.x)) return;
-
-      const sphere = new THREE.Sphere();
-      box.getBoundingSphere(sphere);
-
-      const center = sphere.center.clone();
-      const radius = Math.max(0.001, sphere.radius);
-
-      // Effective FOV limited by aspect ratio (so it also fits horizontally).
-      const vFov = camera.fov * (Math.PI / 180);
-      const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
-      const minFov = Math.min(vFov, hFov);
-
-      // Distance for a sphere to fit in view; then apply tighter framing.
-      let dist = radius / Math.sin(minFov / 2);
-      dist *= Math.max(0.08, Math.min(1.0, tightness));
-
-      // Never go inside the object; keep a small margin.
-      const minDistFromSurface = radius * 1.001;
-      dist = Math.max(dist, minDistFromSurface);
-
-      // Respect orbit controls constraints.
-      if (controls && typeof controls.minDistance === "number") dist = Math.max(dist, controls.minDistance);
-      if (controls && typeof controls.maxDistance === "number") dist = Math.min(dist, controls.maxDistance);
-
-      // Move along the current view direction to preserve user orientation.
-      const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
-      if (!isFinite(dir.x) || dir.lengthSq() < 1e-8) dir.set(1, 0.35, 1).normalize();
-
-      const newPos = center.clone().add(dir.multiplyScalar(dist));
-
-      // Tune clipping planes a bit to reduce near clipping when very close.
-      const desiredNear = Math.max(0.01, dist / 80);
-      const desiredFar  = Math.max(500, dist + radius * 25);
-      if (Math.abs(camera.near - desiredNear) > 1e-6 || Math.abs(camera.far - desiredFar) > 1e-6){
-        camera.near = desiredNear;
-        camera.far = desiredFar;
-        camera.updateProjectionMatrix();
-      }
-
-      const endPos = newPos;
-      const endTarget = center;
-
-      animateCamera({ toPos: endPos, toTarget: endTarget, durationMs: animateMs, statusText: "Focused" });
-    }
 
     // Center the loaded models on the grid (world origin) so they always appear in the middle of the grid.
     // - Moves X/Z so the bounding-box center is at (0,*,0)
@@ -1693,37 +1588,6 @@ function setAutoRotate(enabled){
       controls.update();
     }
 
-    // Creates a "spin rig" so rotation happens around the model's own vertical axis:
-    // - The rig stays at world origin (0,0,0) which is also the center of the grid.
-    // - The loaded group is offset inside the rig so its bbox center (X/Z) is at origin and its base sits on y=0.
-    function makeSpinRig(group){
-      if (!group) return null;
-
-      const box = new THREE.Box3().setFromObject(group);
-      if (!isFinite(box.min.x) || !isFinite(box.max.x)) return null;
-
-      const center = new THREE.Vector3();
-      box.getCenter(center);
-      const minY = box.min.y;
-      const height = (box.max.y - box.min.y);
-
-      const rig = new THREE.Object3D();
-      rig.name = "SpinRig";
-
-      // Offset the contents INSIDE the rig (so the rig's origin is the rotation axis).
-      group.position.x -= center.x;
-      group.position.z -= center.z;
-      if (isFinite(minY)) group.position.y -= minY;
-
-      rig.add(group);
-
-      // Orbit target stays near the model's "visual center".
-      _focusReturn = null; controls.target.set(0, Math.max(0.5, height * 0.35), 0);
-
-      return rig;
-    }
-
-
 function ensureGroundAndShadowsFor(model){
       // Place a large ground plane just below the model to catch shadows,
       // and tighten the directional light shadow camera for better quality.
@@ -1733,7 +1597,6 @@ function ensureGroundAndShadowsFor(model){
       box.getSize(size);
       box.getCenter(center);
 
-      const y = box.min.y - Math.max(0.02 * size.y, 0.05);
       // Ground plane disabled (requested): no shadow-catcher plane.
 if (sunLight){
         const r = Math.max(size.x, size.z) * 0.65 + 10;
@@ -1746,10 +1609,10 @@ if (sunLight){
       }
     }
 
-    // Cópias embutidas dos modelos não-padrão para o modo file:// (duplo clique),
-    // onde fetch() ao .ifc é bloqueado pelo browser. Convenção: "./X.ifc" tem a
-    // sua cópia em "./X-data.js", que define window.IFC_EMBEDDED["./X.ifc"].
-    // Carregada só quando esse modelo é pedido (ficheiros de vários MB).
+    // Cópias embutidas dos modelos (fonte principal). Convenção: "./X.ifc" tem a
+    // sua cópia em "./X-data.js", que define window.IFC_EMBEDDED["./X.ifc"]
+    // (o modelo padrão usa window.DEFAULT_IFC_TEXT). Carregada só quando esse
+    // modelo é pedido (ficheiros de vários MB). Resolve null se não existir.
     function getEmbeddedIfcText(url){
       window.IFC_EMBEDDED = window.IFC_EMBEDDED || {};
       if (typeof window.IFC_EMBEDDED[url] === "string") return Promise.resolve(window.IFC_EMBEDDED[url]);
@@ -1787,162 +1650,47 @@ if (sunLight){
         centerModelOnGrid(model);
         ensureGroundAndShadowsFor(model);
         fitToObject(model);
+        if (el.defaultInfo) el.defaultInfo.textContent = "Modelo: " + url.replace("./", "");
         setStatus("Loaded");
       };
 
-      // Reserva local: só usada quando o fetch() ao ficheiro real não é
-      // possível (ex: aberto com duplo clique em file://) ou falha.
-      const loadEmbeddedFallback = async () => {
-        if (myToken !== autoLoadToken) return;
-        clearError();
-        setStatus("Loading…");
-        const text = await getEmbeddedIfcText(url);
-        if (myToken !== autoLoadToken) return;
-        if (typeof text !== "string" || !text.length){
-          if (!isDefault){
-            showError("Failed to load the selected model: " + url +
-              (location.protocol === "file:" ? " — em file:// é preciso " + url.replace(/\.ifc$/i, "-data.js") + " na mesma pasta." : ""));
-            return;
-          }
-          setStatus("Ready");
-          if (el.defaultInfo) el.defaultInfo.textContent = "Modo local (file://): use Open IFC/Escolher ficheiro para carregar um IFC.";
-          return;
-        }
+      // Ordem de carga: 1) cópia "X-data.js" (funciona em http e em file://,
+      // sem pedido falhado); 2) só se essa cópia não existir, o ficheiro "X.ifc"
+      // real (http/https). Assim um modelo pode ser publicado de qualquer das formas.
+      const loadFromText = (text) => {
+        let blobUrl = null;
         try{
-          const blob = new Blob([text], { type: "application/octet-stream" });
-          const blobUrl = URL.createObjectURL(blob);
-          ifcLoader.load(blobUrl, onModelLoaded, undefined,
-            (err) => showError("Failed to load the embedded default IFC.", err));
+          blobUrl = URL.createObjectURL(new Blob([text], { type: "application/octet-stream" }));
+          ifcLoader.load(blobUrl,
+            (model) => { URL.revokeObjectURL(blobUrl); onModelLoaded(model); },
+            undefined,
+            (err) => { URL.revokeObjectURL(blobUrl); if (myToken === autoLoadToken) showError("Failed to load the embedded IFC: " + url, err); });
         }catch(err){
-          showError("Unexpected error while loading the embedded default IFC", err);
+          if (blobUrl) URL.revokeObjectURL(blobUrl);
+          showError("Unexpected error while loading the embedded IFC: " + url, err);
         }
       };
 
+      clearError();
+      setStatus("Loading…");
+      const text = await getEmbeddedIfcText(url);
+      if (myToken !== autoLoadToken) return;
+      if (typeof text === "string" && text.length) return loadFromText(text);
+
       if (location.protocol === "file:") {
-        // fetch() é bloqueado em file:// — vai direto para a reserva embutida.
-        loadEmbeddedFallback();
+        // fetch() é bloqueado em file:// e não há cópia -data.js.
+        if (isDefault){
+          setStatus("Ready");
+          if (el.defaultInfo) el.defaultInfo.textContent = "Modo local (file://): falta " + url.replace(/\.ifc$/i, "-data.js") + " na mesma pasta.";
+        } else {
+          showError("Failed to load the selected model: " + url + " — em file:// é preciso " + url.replace(/\.ifc$/i, "-data.js") + " na mesma pasta.");
+        }
         return;
       }
 
-      // Servido por http(s) (ex: GitHub Pages): usar o ficheiro .ifc real.
-      // Assim, atualizar o modelo é só substituir este ficheiro no repositório.
-      clearError();
-      setStatus("Loading…");
-      try{
-        ifcLoader.load(
-          url,
-          onModelLoaded,
-          undefined,
-          (err) => {
-            console.warn("Falha ao carregar o IFC real via fetch, a tentar a cópia embutida:", err);
-            loadEmbeddedFallback();
-          }
-        );
-      }catch(err){
-        loadEmbeddedFallback();
-      }
-    }
-
-    function onPickFile(e){
-      const files = Array.from(e.target.files || []).filter(Boolean);
-      if (!files.length) return;
-
-      clearError();
-      setStatus("Loading…");
-
-      const byExt = (f) => (f.name.split(".").pop() || "").toLowerCase();
-      const ifcFiles = files.filter(f => byExt(f) === "ifc");
-      const glbFiles = files.filter(f => ["glb","gltf"].includes(byExt(f)));
-
-      // Helper: wrap loader callbacks in Promises
-      const loadIFC = (file) => new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(file);
-        currentURL = url;
-        ifcLoader.load(
-          url,
-          (model) => resolve({ model, url }),
-          undefined,
-          (err) => reject(err)
-        );
+      ifcLoader.load(url, onModelLoaded, undefined, (err) => {
+        if (myToken === autoLoadToken) showError("Failed to load the selected model: " + url, err);
       });
-
-      const loadGLTF = (file) => new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(file);
-        currentURL = url;
-        gltfLoader.load(
-          url,
-          (gltf) => resolve({ model: (gltf.scene || gltf), url }),
-          undefined,
-          (err) => reject(err)
-        );
-      });
-
-      // Load order: GLB first (visual), IFC after (optional metadata/overlays later)
-      (async () => {
-        try {
-          clearModel();
-
-          // Use a group so we can show both GLB + IFC together if user selects both.
-          const group = new THREE.Group();
-          group.name = "LoadedModels";
-
-          // Load GLB/GLTF (if provided)
-          for (const f of glbFiles) {
-            const { model } = await loadGLTF(f);
-            // Enable shadows (materials from glTF already PBR)
-            model.traverse((obj) => {
-              if (obj.isMesh) {
-                obj.castShadow = true;
-                obj.receiveShadow = true;
-              }
-            });
-            group.add(model);
-          }
-
-          // Load IFC (if provided)
-          for (const f of ifcFiles) {
-            const { model } = await loadIFC(f);
-            model.userData.__isIFC = true;
-            model.userData.ifcModelID = (model.modelID != null ? model.modelID : 0);
-            ifcModels.push(model);
-            upgradeMaterialsToPBR(model);
-            applySmoothShading(smoothEnabled);
-            model.traverse((obj) => {
-              if (obj.isMesh) {
-                obj.castShadow = true;
-                obj.receiveShadow = true;
-              }
-            });
-            group.add(model);
-          }
-
-          // If nothing loaded (wrong extension)
-          if (!group.children.length) {
-            throw new Error("Unsupported file type. Please select .ifc, .glb or .gltf");
-          }
-
-
-          // Build a rig so the model rotates around its own vertical axis while remaining centered on the grid.
-          const spinRig = makeSpinRig(group) || group;
-          if (spinRig === group) {
-            centerModelOnGrid(group);
-            scene.add(group);
-          } else {
-            scene.add(spinRig);
-          }
-          currentModel = spinRig;
-          storeInitialModelOrientation();
-
-          fitToObject(spinRig);
-
-          setStatus("Loaded");
-        } catch (err) {
-          showError("Failed to load the selected file(s).", err);
-          setStatus("Error", false);
-        } finally {
-          if (e.target) e.target.value = "";
-        }
-      })();
     }
 
     try{ init(); }catch(err){ showError("Boot error", err); }

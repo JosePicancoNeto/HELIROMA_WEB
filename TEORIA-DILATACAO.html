@@ -700,6 +700,8 @@
     <span class="diagram-lightbox-hint"><i class="fas fa-magnifying-glass-plus"></i> Toque com dois dedos para ampliar</span>
 </div>
 
+<!-- Abas (botões + seletor mobile) — partilhado com HELIROMA-CALC.html -->
+<script src="tabs.js"></script>
 <script>
     function initDiagramLightbox() {
         const lightbox = document.getElementById('diagramLightbox');
@@ -741,28 +743,6 @@
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && lightbox.classList.contains('is-open')) closeLightbox();
         });
-    }
-
-    function setupTabs() {
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const tabContents = document.querySelectorAll('.tab-content');
-        const tabSelector = document.getElementById('tabSelectorMobile');
-
-        function activateTab(tabName) {
-            tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
-            tabContents.forEach(content => content.classList.toggle('active', content.id === tabName));
-            if (tabSelector && tabSelector.value !== tabName) {
-                tabSelector.value = tabName;
-            }
-        }
-
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => activateTab(button.dataset.tab));
-        });
-
-        if (tabSelector) {
-            tabSelector.addEventListener('change', () => activateTab(tabSelector.value));
-        }
     }
 
     function renderFormulas() {

@@ -967,15 +967,12 @@
             MAX_COMPRIMENTO: 9999.99,
             MIN_COMPRIMENTO: 0.01,
             STORAGE_KEY_HISTORY: 'heliroma_history',
-            STORAGE_KEY_CURRENT: 'heliroma_current',
-            MAX_HISTORY_ITEMS: 50,
-            PRECISION_THRESHOLD: 1 // kg
+            MAX_HISTORY_ITEMS: 50
         };
 
         // Estado da aplicação
         const appState = {
-            acessorios: [],
-            calculos: []
+            acessorios: []
         };
 
         // Cache de seletores (performance)
@@ -1009,15 +1006,6 @@
             if (valor < 1) return valor.toFixed(3);
             if (valor < 100) return valor.toFixed(2);
             return valor.toFixed(1);
-        }
-
-        /**
-         * Valida e limpa número de entrada
-         */
-        function validarNumero(valor, min, max) {
-            const num = parseFloat(valor);
-            if (isNaN(num)) return null;
-            return Math.max(min, Math.min(max, num));
         }
 
         /**
@@ -1165,7 +1153,6 @@
                 historico = historico.slice(0, CONFIG.MAX_HISTORY_ITEMS);
 
                 localStorage.setItem(CONFIG.STORAGE_KEY_HISTORY, JSON.stringify(historico));
-                appState.calculos = historico;
 
                 mostrarSucesso();
                 atualizarHistoricoUI();
@@ -1221,7 +1208,6 @@
                 historico = historico.filter(c => c.id !== id);
 
                 localStorage.setItem(CONFIG.STORAGE_KEY_HISTORY, JSON.stringify(historico));
-                appState.calculos = historico;
 
                 atualizarHistoricoUI();
                 mostrarToast('Cálculo apagado do histórico', 'success');

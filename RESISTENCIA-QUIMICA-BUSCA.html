@@ -18,8 +18,6 @@
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- html2pdf para exportação PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
         * {
@@ -666,7 +664,7 @@
             { name: 'Acetic acid', concentration: '50%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
             { name: 'Acetic acid, glacial', concentration: '>96%', temp20: '✓', temp60: '□', category: 'Ácidos' },
             { name: 'Acetone', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Solventes' },
-            { name: 'Acetonophenone', concentration: '100%', temp20: '✓', temp60: '□', category: 'Solventes' },
+            { name: 'Acetophenone', concentration: '100%', temp20: '✓', temp60: '□', category: 'Solventes' },
             { name: 'Acrylonitrile', concentration: '100%', temp20: '✓', temp60: '-', category: 'Solventes' },
             { name: 'Air', concentration: '-', temp20: '✓', temp60: '✓', category: 'Gases' },
             { name: 'Almond oil', concentration: '-', temp20: '✓', temp60: '-', category: 'Óleos' },
@@ -709,14 +707,14 @@
             { name: 'Coconut oil', concentration: '-', temp20: '✓', temp60: '-', category: 'Óleos' },
             { name: 'Corn oil', concentration: '-', temp20: '✓', temp60: '□', category: 'Óleos' },
             { name: 'Cottonseed oil', concentration: '-', temp20: '✓', temp60: '-', category: 'Óleos' },
-            { name: 'Copper III chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '-', category: 'Sais' },
-            { name: 'Copper III nitrate', concentration: '30%', temp20: '✓', temp60: '✓', category: 'Sais' },
-            { name: 'Copper III sulphate', concentration: 'Sat.sol', temp20: '✓', temp60: '-', category: 'Sais' },
+            { name: 'Copper II chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '-', category: 'Sais' },
+            { name: 'Copper II nitrate', concentration: '30%', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Copper II sulphate', concentration: 'Sat.sol', temp20: '✓', temp60: '-', category: 'Sais' },
 
             // DEXTROSE ATÉ DIOXANE
             { name: 'Dextrose', concentration: 'Sol', temp20: '✓', temp60: '✓', category: 'Açúcares' },
             { name: 'Diethylene glycol', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Glicóis' },
-            { name: 'Dimethyl formaldehyde', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Solventes' },
+            { name: 'Dimethyl formamide', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Solventes' },
             { name: 'Dioxane', concentration: '100%', temp20: '□', temp60: '□', category: 'Solventes' },
             { name: 'Distilled water', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Água' },
 
@@ -761,13 +759,13 @@
             { name: 'Magnesium sulphate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
             { name: 'Malic acid', concentration: 'Sol', temp20: '✓', temp60: '✓', category: 'Ácidos' },
             { name: 'Mercury', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Metais' },
-            { name: 'Mercury III chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
-            { name: 'Mercury III cyanide', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Mercury II chloride', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
+            { name: 'Mercury II cyanide', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
             { name: 'Mercury II nitrate', concentration: 'Sol', temp20: '✓', temp60: '✓', category: 'Sais' },
             { name: 'Methyl acetate', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Solventes' },
             { name: 'Methyl alcohol', concentration: '5%', temp20: '✓', temp60: '□', category: 'Álcoois' },
             { name: 'Methyl bromide', concentration: '100%', temp20: '✕', temp60: '✕', category: 'Solventes' },
-            { name: 'Methyl ether ketone', concentration: '100%', temp20: '✓', temp60: '✕', category: 'Solventes' },
+            { name: 'Methyl ethyl ketone', concentration: '100%', temp20: '✓', temp60: '✕', category: 'Solventes' },
             { name: 'Milk', concentration: '100%', temp20: '✓', temp60: '✓', category: 'Alimentos' },
             { name: 'Monochloroacetic acid', concentration: '>85%', temp20: '✓', temp60: '✓', category: 'Ácidos' },
 
@@ -812,9 +810,9 @@
             { name: 'Sodium dichromate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
             { name: 'Sodium hydroxide', concentration: '1%', temp20: '✓', temp60: '✓', category: 'Bases' },
             { name: 'Sodium hydroxide', concentration: '10-60%', temp20: '✓', temp60: '✓', category: 'Bases' },
-            { name: 'Sodium hypoclorite', concentration: '5%', temp20: '✓', temp60: '-', category: 'Desinfetantes' },
-            { name: 'Sodium hypoclorite', concentration: '10%', temp20: '✓', temp60: '-', category: 'Desinfetantes' },
-            { name: 'Sodium hypoclorite', concentration: '20%', temp20: '✓', temp60: '-', category: 'Desinfetantes' },
+            { name: 'Sodium hypochlorite', concentration: '5%', temp20: '✓', temp60: '-', category: 'Desinfetantes' },
+            { name: 'Sodium hypochlorite', concentration: '10%', temp20: '✓', temp60: '-', category: 'Desinfetantes' },
+            { name: 'Sodium hypochlorite', concentration: '20%', temp20: '✓', temp60: '-', category: 'Desinfetantes' },
             { name: 'Sodium nitrate', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
             { name: 'Sodium phosphate (neutral)', concentration: 'Sat.sol', temp20: '✓', temp60: '✓', category: 'Sais' },
             { name: 'Sodium silicate', concentration: 'Sol', temp20: '✓', temp60: '✓', category: 'Sais' },

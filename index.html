@@ -723,7 +723,7 @@
       sem instalar nada.
     </p>
 
-    <div class="libs" aria-labelledby="libsTitle">
+    <section class="libs" aria-labelledby="libsTitle">
       <h2 id="libsTitle">Bibliotecas</h2>
       <div class="libs-text">
       <p>With nearly three decades of expertise, HELIROMA’s team works in close collaboration with global industry leaders to develop innovative, cost-effective solutions tailored to the complexities of contemporary construction. Our reach extends across over 30 countries, and as part of the Huliot Group, our solutions are available in more than 60 countries worldwide.</p>
@@ -735,7 +735,7 @@
       <div class="libs-text">
       <p>At HELIROMA, we remain steadfast in our mission to provide advanced, resilient piping solutions that serve as the backbone for critical infrastructure in the Water and Construction sectors, powered by our technical expertise, unwavering commitment to sustainability, and comprehensive support and training services.</p>
       </div>
-    </div>
+    </section>
 
     <div class="plate">
       <span class="corner-tl"></span><span class="corner-tr"></span>
@@ -764,8 +764,8 @@
       </div>
     </div>
 
-    <!-- Controlos do visualizador (Open IFC / Escolher ficheiro / Clear /
-         Sombras) e status — movidos para fora do viewer.html para uma vista
+    <!-- Controlos do visualizador (vistas / grelha / modelos / cor de fundo /
+         sombras) e status — movidos para fora do viewer.html para uma vista
          3D sem sobreposições. Espelham a visibilidade do gate mobile
          (ver initMobileGate): escondidos enquanto o viewer não for aberto. -->
     <div class="viewer-controls" id="viewerControls">
@@ -791,14 +791,14 @@
       </div>
       <div class="vc-status" id="extStatus">
         <div><span class="vc-dot" id="extStatusDot"></span><span id="extStatusText">Ready</span></div>
-        <div class="vc-status-sub" id="extStatusSub">Abra um IFC. Use mouse/touch para orbitar/zoom/pan.</div>
+        <div class="vc-status-sub" id="extStatusSub">Use rato/toque para orbitar, aproximar e deslocar.</div>
       </div>
     </div>
 
     <div class="title-block">
       <div class="cell">
         <span class="k">FORMATO</span>
-        <span class="v">IFC / GLTF</span>
+        <span class="v">IFC</span>
       </div>
       <div class="cell">
         <span class="k">MOTOR</span>
@@ -806,7 +806,7 @@
       </div>
       <div class="cell">
         <span class="k">STATUS</span>
-        <span class="v"><span class="status-dot"></span>Pronto</span>
+        <span class="v"><span class="status-dot" id="tbStatusDot"></span><span id="tbStatusText">A carregar…</span></span>
       </div>
       <div class="cell">
         <span class="k">ESCALA</span>
@@ -974,8 +974,8 @@ window.isViewerMsg = (e, iframe) => e.source === iframe.contentWindow &&
     } else {
       gate.classList.add('is-active');
       iframe.classList.add('is-hidden');
-      // Os controlos externos (Open IFC/Clear/Sombras) ficam escondidos
-      // enquanto o viewer não é aberto — sem isto, um clique em "Open IFC"
+      // Os controlos externos (vistas/modelos/sombras) ficam escondidos
+      // enquanto o viewer não é aberto — sem isto, um clique num controlo
       // antes do gate ser dispensado enviaria a mensagem para um iframe
       // ainda sem documento carregado, sem qualquer efeito visível.
       if (viewerControls) viewerControls.classList.add('is-hidden');
@@ -1098,9 +1098,6 @@ window.isViewerMsg = (e, iframe) => e.source === iframe.contentWindow &&
     catch(_){ /* iframe ainda não pronto — ignora silenciosamente */ }
   }
 
-  // Ambas as ações fazem o mesmo dentro do viewer (abrem o input de
-  // ficheiro escondido) — mantido assim porque era esse o comportamento
-  // original com dois botões redundantes ("Open IFC" e "Escolher ficheiro").
   if (btnIso) btnIso.addEventListener('click', () => sendToViewer({ type: 'view-iso' }));
   if (btnTop) btnTop.addEventListener('click', () => sendToViewer({ type: 'view-top' }));
   if (btnGrid) btnGrid.addEventListener('click', () => sendToViewer({ type: 'toggle-grid' }));
@@ -1162,11 +1159,15 @@ window.isViewerMsg = (e, iframe) => e.source === iframe.contentWindow &&
       if (statusText) statusText.textContent = data.text ?? '';
       if (statusSub) statusSub.textContent = data.sub ?? '';
       if (statusCard) statusCard.title = data.text ?? '';
-      if (statusDot){
-        const ok = data.ok !== false;
-        statusDot.style.background = ok ? '#2ecc94' : '#ef4444';
-        statusDot.style.boxShadow = ok ? '0 0 0 3px rgba(46,204,148,.15)' : '0 0 0 3px rgba(239,68,68,.18)';
-      }
+      const ok = data.ok !== false;
+      // O ponto de estado do cartão e o da faixa STATUS seguem o mesmo estado real.
+      [statusDot, document.getElementById('tbStatusDot')].forEach(dot => {
+        if (!dot) return;
+        dot.style.background = ok ? '#2ecc94' : '#ef4444';
+        dot.style.boxShadow = ok ? '0 0 0 3px rgba(46,204,148,.15)' : '0 0 0 3px rgba(239,68,68,.18)';
+      });
+      const tbText = document.getElementById('tbStatusText');
+      if (tbText) tbText.textContent = ({ Ready:'Pronto', 'Loading…':'A carregar…', Loaded:'Modelo carregado', Cleared:'Vazio', Error:'Erro' })[data.text] || data.text || '';
     } else if (data.type === 'pseudo-fullscreen'){
       // Fallback de fullscreen pedido pelo viewer.html quando a Fullscreen
       // API nativa falhou/indisponível (caso típico: iOS Safari dentro do

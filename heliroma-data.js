@@ -1425,18 +1425,6 @@ window.HELIROMA_DATA_EXTERNAL = {
         "ref": "P-2380125",
         "weight": 0.745,
         "extra": "redução 125x110"
-      },
-      {
-        "dn": 160,
-        "ref": "P-2380160",
-        "weight": 0.679,
-        "extra": "redução 160x110"
-      },
-      {
-        "dn": 160,
-        "ref": "P-2380161",
-        "weight": 0.71,
-        "extra": "redução 160x125"
       }
     ],
     "REDUCER UNION XL": [
