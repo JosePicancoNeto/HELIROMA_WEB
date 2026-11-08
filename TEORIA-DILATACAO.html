@@ -2,17 +2,18 @@
 <html lang="pt" class="scroll-smooth">
 <head>
 <meta charset="UTF-8">
+<!-- Só recursos do próprio site (sem CDNs). Se ligar o formulário BIM a um endpoint externo, acrescentar o domínio a connect-src. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Teoria da Dilatação Térmica | Braços e Liras de Dilatação</title>
 <link rel="stylesheet" href="theme.css">
 <script src="theme.js"></script>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
+<link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<script src="vendor/katex/katex.min.js"></script>
+<script src="vendor/katex/contrib/auto-render.min.js"></script>
 
 <style>
     * {
@@ -302,6 +303,8 @@
 </style>
 <link rel="stylesheet" href="nav.css">
 <script src="nav.js" defer></script>
+<!-- Tailwind compilado (vendor/tailwind.min.css; ver vendor/README.md). Último no <head>, como o antigo CDN. -->
+<link rel="stylesheet" href="vendor/tailwind.min.css">
 </head>
 <body>
 <header class="hx-nav">

@@ -2,19 +2,20 @@
 <html lang="pt" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
+    <!-- Só recursos do próprio site (sem CDNs). Se ligar o formulário BIM a um endpoint externo, acrescentar o domínio a connect-src. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dimensionamento Dilatação Térmica - PP-R</title>
 <link rel="stylesheet" href="theme.css">
 <script src="theme.js"></script>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Google Fonts - Outfit + JetBrains Mono (como no original) -->
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/fonts/fonts.css">
 
     <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
 
 
     <style>
@@ -1095,6 +1096,8 @@
 
 <link rel="stylesheet" href="nav.css">
 <script src="nav.js" defer></script>
+<!-- Tailwind compilado (vendor/tailwind.min.css; ver vendor/README.md). Último no <head>, como o antigo CDN. -->
+<link rel="stylesheet" href="vendor/tailwind.min.css">
 </head>
 <body>
 <header class="hx-nav">
@@ -2273,15 +2276,46 @@
         // SISTEMA DE HISTÓRICO DE CÁLCULOS
         // ====================================================================
 
-        // Recuperar histórico do localStorage
-        function getCalculationHistory() {
-            const history = localStorage.getItem('thermalExpansionHistory');
-            return history ? JSON.parse(history) : [];
+        // Escape para texto e atributos HTML: tudo o que vem do histórico
+        // (localStorage) e entra em innerHTML passa por aqui.
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
-        // Guardar histórico no localStorage
+        // Recuperar histórico do localStorage. Valores corrompidos (JSON inválido,
+        // não-array, campos de tipo errado) são descartados em vez de partirem a página.
+        function getCalculationHistory() {
+            let data;
+            try {
+                data = JSON.parse(localStorage.getItem('thermalExpansionHistory') || '[]');
+            } catch (e) {
+                console.warn('Histórico ilegível — ignorado:', e);
+                return [];
+            }
+            if (!Array.isArray(data)) return [];
+            const num = v => (Number.isFinite(Number(v)) ? Number(v) : 0);
+            return data.filter(c => c && typeof c === 'object').map(c => ({
+                ...c,
+                tramo: c.tramo == null ? null : String(c.tramo).slice(0, 12),
+                modelTypeId: c.modelTypeId === 'lira' ? 'lira' : 'braço',
+                modelType: c.modelTypeId === 'lira' ? 'Lira de Dilatação' : 'Braço de Dilatação',
+                diameter: num(c.diameter), tempChange: num(c.tempChange), deltaL: num(c.deltaL),
+                LsRounded: num(c.LsRounded), LcRounded: num(c.LcRounded)
+            }));
+        }
+
+        // Guardar histórico no localStorage (pode falhar: quota cheia, modo privado)
         function saveCalculationHistory(history) {
-            localStorage.setItem('thermalExpansionHistory', JSON.stringify(history));
+            try {
+                localStorage.setItem('thermalExpansionHistory', JSON.stringify(history));
+                return true;
+            } catch (e) {
+                console.error('Não foi possível guardar o histórico:', e);
+                showToast('Não foi possível guardar o histórico neste browser', 'warning');
+                return false;
+            }
         }
 
         // Mostrar notificação Toast
@@ -2379,7 +2413,7 @@
                 history.pop();
             }
 
-            saveCalculationHistory(history);
+            if (!saveCalculationHistory(history)) return;
             showToast('Cálculo guardado no histórico com sucesso!', 'success');
 
             // Atualizar visualização do histórico
@@ -2469,24 +2503,24 @@
                 let rowHTML = `
                     <tr>
                         <td class="px-3 py-3 text-sm" data-label="Tramo">
-                            <input type="text" class="history-tramo-input" value="${tramoValue.replace(/"/g, '&quot;')}"
+                            <input type="text" class="history-tramo-input" value="${escapeHtml(tramoValue)}"
                                 maxlength="12" oninput="updateTramoLabel(${index}, this.value)">
                         </td>
-                        <td class="px-3 py-3 text-left text-sm" data-label="Modelo">${calc.modelType}</td>
-                        <td class="px-3 py-3 text-center text-sm" data-label="Ø (mm)">${calc.diameter}</td>
-                        <td class="px-3 py-3 text-center text-sm" data-label="ΔT (K)">${calc.tempChange}</td>
+                        <td class="px-3 py-3 text-left text-sm" data-label="Modelo">${escapeHtml(calc.modelType)}</td>
+                        <td class="px-3 py-3 text-center text-sm" data-label="Ø (mm)">${escapeHtml(calc.diameter)}</td>
+                        <td class="px-3 py-3 text-center text-sm" data-label="ΔT (K)">${escapeHtml(calc.tempChange)}</td>
                         <td class="px-3 py-3 text-center text-sm font-mono" data-label="ΔL (mm)">${formatNumber(calc.deltaL, 2)}</td>
-                        <td class="px-3 py-3 text-center text-sm font-mono" data-label="Ls (mm)">${calc.LsRounded}</td>
+                        <td class="px-3 py-3 text-center text-sm font-mono" data-label="Ls (mm)">${escapeHtml(calc.LsRounded)}</td>
                 `;
 
                 // Adicionar coluna Lc dinamicamente
                 if (hasMixedModels) {
                     // Se há modelos mistos, mostrar Lc ou um travessão
                     const lcValue = calc.modelTypeId === 'braço' ? '—' : calc.LcRounded;
-                    rowHTML += `<td class="px-3 py-3 text-center text-sm font-mono" data-label="Lc (mm)">${lcValue}</td>`;
+                    rowHTML += `<td class="px-3 py-3 text-center text-sm font-mono" data-label="Lc (mm)">${escapeHtml(lcValue)}</td>`;
                 } else if (hasLyreExpansion) {
                     // Se é apenas lira, mostrar o valor
-                    rowHTML += `<td class="px-3 py-3 text-center text-sm font-mono" data-label="Lc (mm)">${calc.LcRounded}</td>`;
+                    rowHTML += `<td class="px-3 py-3 text-center text-sm font-mono" data-label="Lc (mm)">${escapeHtml(calc.LcRounded)}</td>`;
                 }
 
                 rowHTML += `
@@ -2536,7 +2570,7 @@
         // Limpar todo o histórico
         function clearAllHistory() {
             if (confirm('Tem certeza que deseja eliminar TODOS os cálculos do histórico?')) {
-                localStorage.removeItem('thermalExpansionHistory');
+                try { localStorage.removeItem('thermalExpansionHistory'); } catch (e) { /* bloqueado */ }
                 renderHistoryTable();
                 showToast('Histórico limpo com sucesso', 'success');
             }
@@ -2592,7 +2626,7 @@
             tr.innerHTML = `
                 <td class="px-3 py-2 text-center text-sm mono-font" data-label="#" style="color:var(--text-tertiary)">${compatRowCount}</td>
                 <td class="px-3 py-2" data-label="REF">
-                    <input type="text" class="compat-ref" placeholder="Ex: T1" value="${ref}"
+                    <input type="text" class="compat-ref" placeholder="Ex: T1" value="${escapeHtml(ref)}"
                         style="width:100%; font-size:0.8125rem;"
                         oninput="updateCompatRow('${rowId}')">
                 </td>
@@ -2609,7 +2643,7 @@
                     </select>
                 </td>
                 <td class="px-3 py-2" data-label="L (m)">
-                    <input type="number" class="compat-length" placeholder="m" min="0" step="0.1" value="${length}"
+                    <input type="number" class="compat-length" placeholder="m" min="0" step="0.1" value="${escapeHtml(length)}"
                         style="width:100%; font-size:0.8125rem;"
                         oninput="updateCompatRow('${rowId}')">
                 </td>

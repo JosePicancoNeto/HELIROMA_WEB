@@ -2,13 +2,13 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8" />
+<!-- Só recursos do próprio site (sem CDNs). Se ligar o formulário BIM a um endpoint externo, acrescentar o domínio a connect-src. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Test Drive — IFC Viewer</title>
 <link rel="stylesheet" href="theme.css">
 <script src="theme.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
 <style>
   :root{
     --ink-900:#0a1f33;
@@ -872,7 +872,7 @@
           </select>
         </label>
       </div>
-      <label class="bim-consent"><input type="checkbox" name="privacidade" required> <span>Li e aceito a <a href="#" target="_blank" rel="noopener">política de privacidade</a></span></label>
+      <label class="bim-consent"><input type="checkbox" name="privacidade" required> <span>Li e aceito a <a href="https://heliroma.pt/en/privacy-policy/" target="_blank" rel="noopener noreferrer">política de privacidade</a></span></label>
       <p class="bim-status" id="bimStatus" role="status" aria-live="polite"></p>
       <button type="submit" class="bim-submit">Enviar uma mensagem</button>
     </form>
@@ -1129,6 +1129,14 @@ window.isViewerMsg = (e, iframe) => e.source === iframe.contentWindow &&
 
   if (statusCard){
     statusCard.addEventListener('click', () => statusCard.classList.toggle('expanded'));
+  }
+
+  // Aberto por duplo clique (file://): o browser bloqueia os módulos JS locais
+  // do visualizador 3D (vendor/). O resto do site funciona; o 3D precisa de http(s).
+  if (location.protocol === 'file:'){
+    if (statusText) statusText.textContent = 'Indisponível offline';
+    if (statusSub) statusSub.textContent = 'O visualizador 3D só funciona online ou com um servidor local (ex.: "python -m http.server" nesta pasta).';
+    const tb = document.getElementById('tbStatusText'); if (tb) tb.textContent = 'Indisponível offline';
   }
 
   // Estado inicial dos controlos de sombra: lidos diretamente do

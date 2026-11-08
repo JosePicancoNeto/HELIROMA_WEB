@@ -2,13 +2,13 @@
 <html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
+    <!-- Só recursos do próprio site (sem CDNs). Se ligar o formulário BIM a um endpoint externo, acrescentar o domínio a connect-src. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Peso de Coletor - Heliroma</title>
 <link rel="stylesheet" href="theme.css">
 <script src="theme.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/fonts/fonts.css">
     <style>
   :root{
     --ink-900:#0a1f33;
@@ -1099,12 +1099,12 @@
         // A chave textual usada nos <option value="..."> e no estado da
         // aplicação é "<dn>" quando não há extra, ou "<dn>|<extra>" quando há.
 
-        function escapeHtmlAttr(valor) {
-            return String(valor)
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
+        // Escape para texto e atributos HTML. Tudo o que vem do localStorage ou do
+        // catálogo e entra em innerHTML passa por aqui (evita injeção de HTML/JS).
+        function esc(valor) {
+            return String(valor == null ? '' : valor)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
         function chaveItem(item) {
@@ -1132,14 +1132,49 @@
         // GESTÃO DE HISTÓRICO
         // ============================================
 
+        /**
+         * Lê o histórico do localStorage e só devolve entradas com a forma
+         * esperada. Valores corrompidos (JSON inválido, não-array, campos de
+         * tipo errado) são descartados em vez de partirem a página.
+         */
         function carregarHistorico() {
+            let dados;
             try {
-                const stored = localStorage.getItem(CONFIG.STORAGE_KEY_HISTORY);
-                return stored ? JSON.parse(stored) : [];
+                dados = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY_HISTORY) || '[]');
             } catch (erro) {
-                console.error('Erro ao carregar histórico:', erro);
+                console.warn('Histórico ilegível — ignorado:', erro);
                 return [];
             }
+            if (!Array.isArray(dados)) return [];
+            return dados.filter(c => c && typeof c === 'object' && Number.isFinite(Number(c.id)))
+                .map(c => ({
+                    id: Number(c.id),
+                    timestamp: String(c.timestamp || ''),
+                    tipoTubo: String(c.tipoTubo || ''),
+                    diametro: parseInt(c.diametro, 10) || 0,
+                    comprimento: parseFloat(c.comprimento) || 0,
+                    pesoTotal: String(c.pesoTotal || ''),
+                    totalAcessorios: parseInt(c.totalAcessorios, 10) || 0,
+                    acessoriosJSON: typeof c.acessoriosJSON === 'string' ? c.acessoriosJSON : '[]'
+                }));
+        }
+
+        /**
+         * Converte acessórios vindos do histórico para o formato interno, com
+         * tipos validados: id numérico novo, quantidade inteira ≥ 1, tipo e
+         * diâmetro só como texto.
+         */
+        function normalizarAcessorios(json) {
+            let lista;
+            try { lista = JSON.parse(json || '[]'); } catch (_) { return []; }
+            if (!Array.isArray(lista)) return [];
+            const base = Date.now();
+            return lista.filter(a => a && typeof a === 'object').slice(0, CONFIG.MAX_ACCESSORIES).map((a, i) => ({
+                id: base + i,
+                tipo: typeof a.tipo === 'string' ? a.tipo : '',
+                diametro: a.diametro == null ? '' : String(a.diametro),
+                quantidade: Math.max(1, parseInt(a.quantidade, 10) || 1)
+            }));
         }
 
         function salvarNoHistorico(calculo) {
@@ -1177,17 +1212,17 @@
 
             historyList.innerHTML = historico.map(calculo => {
                 const data = new Date(calculo.timestamp);
-                const dataFormatada = data.toLocaleDateString('pt-PT') + ' ' + data.toLocaleTimeString('pt-PT');
+                const dataFormatada = isNaN(data) ? '' : data.toLocaleDateString('pt-PT') + ' ' + data.toLocaleTimeString('pt-PT');
 
                 return `
                     <div class="history-item">
                         <div class="history-item-details">
-                            <div class="history-item-weight">${calculo.pesoTotal} kg</div>
+                            <div class="history-item-weight">${esc(calculo.pesoTotal)} kg</div>
                             <div class="history-item-config">
-                                ${calculo.tipoTubo} | DN ${calculo.diametro} | ${calculo.comprimento}m
+                                ${esc(calculo.tipoTubo)} | DN ${calculo.diametro} | ${calculo.comprimento}m
                                 ${calculo.totalAcessorios > 0 ? ` | ${calculo.totalAcessorios} acessório(s)` : ''}
                             </div>
-                            <div class="history-item-time">${dataFormatada}</div>
+                            <div class="history-item-time">${esc(dataFormatada)}</div>
                         </div>
                         <div class="history-action">
                             <button data-action="restaurar" data-id="${calculo.id}" title="Restaurar este cálculo">
@@ -1237,7 +1272,7 @@
                     selectors.comprimento.value = calculo.comprimento;
                     selectors.comprimento.dispatchEvent(new Event('input'));
 
-                    appState.acessorios = JSON.parse(calculo.acessoriosJSON || '[]');
+                    appState.acessorios = normalizarAcessorios(calculo.acessoriosJSON);
                     renderizarAcessorios();
 
                     switchTab('calculator');
@@ -1464,7 +1499,7 @@
         function criarLinhaAcessorioHTML(acessorio) {
             const tipos = Object.keys(HELIROMA_DATA.acessorios);
             const optionsTipo = tipos.map(tipo =>
-                `<option value="${escapeHtmlAttr(tipo)}" ${acessorio.tipo === tipo ? 'selected' : ''}>${tipo}</option>`
+                `<option value="${esc(tipo)}" ${acessorio.tipo === tipo ? 'selected' : ''}>${esc(tipo)}</option>`
             ).join('');
 
             let optionsDiametro = '<option value="">Selecione...</option>';
@@ -1482,14 +1517,14 @@
                     }
                 });
                 optionsDiametro = opcoes.map(o =>
-                    `<option value="${escapeHtmlAttr(o.chave)}" ${String(acessorio.diametro) === o.chave ? 'selected' : ''}>${o.rotulo}</option>`
+                    `<option value="${esc(o.chave)}" ${String(acessorio.diametro) === o.chave ? 'selected' : ''}>${esc(o.rotulo)}</option>`
                 ).join('');
             }
 
             const { ref, pesoUnitario, pesoTotal } = calcularPesoAcessorio(acessorio);
 
             return `
-                <tr data-accessory-id="${acessorio.id}">
+                <tr data-accessory-id="${esc(acessorio.id)}">
                     <td data-label="Acessório">
                         <select class="small-input" data-field="tipo">
                             <option value="">Selecione...</option>
@@ -1501,13 +1536,13 @@
                             ${optionsDiametro}
                         </select>
                     </td>
-                    <td data-cell="ref" data-label="Referência"><span class="acc-ref-val">${ref} <br><small style="color: #999;">${pesoUnitario} kg</small></span></td>
+                    <td data-cell="ref" data-label="Referência"><span class="acc-ref-val">${esc(ref)} <br><small style="color: #999;">${esc(pesoUnitario)} kg</small></span></td>
                     <td data-label="Quantidade">
-                        <input type="number" class="small-input" min="1" value="${acessorio.quantidade}" data-field="quantidade">
+                        <input type="number" class="small-input" min="1" value="${esc(acessorio.quantidade)}" data-field="quantidade">
                     </td>
                     <td data-cell="pesoTotal" data-label="Peso Total" style="font-weight: 600; color: #667eea;">${pesoTotal} kg</td>
                     <td class="acc-cell-actions" data-label="Ação">
-                        <button type="button" class="btn-remove" data-action="remover" data-id="${acessorio.id}">
+                        <button type="button" class="btn-remove" data-action="remover" data-id="${esc(acessorio.id)}">
                             ✕ Remover
                         </button>
                     </td>
@@ -1576,7 +1611,7 @@
             if (!row) return;
 
             const { ref, pesoUnitario, pesoTotal } = calcularPesoAcessorio(acessorio);
-            row.querySelector('[data-cell="ref"]').innerHTML = `<span class="acc-ref-val">${ref} <br><small style="color: #999;">${pesoUnitario} kg</small></span>`;
+            row.querySelector('[data-cell="ref"]').innerHTML = `<span class="acc-ref-val">${esc(ref)} <br><small style="color: #999;">${esc(pesoUnitario)} kg</small></span>`;
             row.querySelector('[data-cell="pesoTotal"]').textContent = `${pesoTotal} kg`;
         }
 
@@ -1805,9 +1840,9 @@
                                 <th>Tipo</th><th>Diâmetro</th><th>Comprimento</th><th>Peso/Metro</th><th>Peso Total</th>
                             </tr>
                             <tr>
-                                <td>${tipoTubo}</td>
-                                <td>DN ${diametro}</td>
-                                <td>${comprimento} m</td>
+                                <td>${esc(tipoTubo)}</td>
+                                <td>DN ${esc(diametro)}</td>
+                                <td>${esc(comprimento)} m</td>
                                 <td>${selectors.pesoMetroTubo.textContent}</td>
                                 <td>${selectors.pesoTotalTubo.textContent}</td>
                             </tr>
@@ -1824,10 +1859,10 @@
                             if (item) {
                                 conteudo += `
                                     <tr>
-                                        <td>${acessorio.tipo}</td>
-                                        <td>${rotuloItem(item)}</td>
-                                        <td>${item.ref}</td>
-                                        <td>${acessorio.quantidade}</td>
+                                        <td>${esc(acessorio.tipo)}</td>
+                                        <td>${esc(rotuloItem(item))}</td>
+                                        <td>${esc(item.ref)}</td>
+                                        <td>${esc(acessorio.quantidade)}</td>
                                         <td>${item.weight.toFixed(3)} kg</td>
                                         <td>${(item.weight * acessorio.quantidade).toFixed(2)} kg</td>
                                     </tr>
