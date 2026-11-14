@@ -448,68 +448,58 @@
                     <p class="text-slate-400 mb-6 ml-1">2.1 — Braço de dilatação</p>
 
                     <div class="diagram-wrap mb-6">
-                        <svg viewBox="0 0 620 340" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Braço de dilatação em L com pontos fixos PF, pontos móveis PM, cota L e comprimento do braço Ls">
                             <defs>
-                                <marker id="a1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path></marker>
-                                <marker id="a2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path></marker>
-                                <pattern id="hatch" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-                                    <line x1="0" y1="0" x2="0" y2="8" stroke="var(--text-tertiary)" stroke-width="2"></line>
-                                </pattern>
+                                <marker id="c1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path></marker>
+                                <pattern id="hatchA" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="8" stroke="var(--text-tertiary)" stroke-width="2"></line></pattern>
+                                <g id="pfA"><line x1="0" y1="92" x2="0" y2="117" stroke="var(--text-tertiary)" stroke-width="2"></line><rect x="-10" y="117" width="20" height="26" fill="var(--accent)" fill-opacity="0.85" stroke="var(--accent-light)" stroke-width="1.4"></rect></g>
+                                <g id="pmA"><line x1="0" y1="92" x2="0" y2="117" stroke="var(--text-tertiary)" stroke-width="2"></line><circle cx="0" cy="130" r="13" fill="none" stroke="var(--text-secondary)" stroke-width="2"></circle></g>
                             </defs>
 
-                            <!-- Dimensão L -->
-                            <line x1="20" y1="30" x2="330" y2="30" stroke="var(--text-secondary)" stroke-width="1.2" marker-start="url(#a1)" marker-end="url(#a2)"></line>
-                            <text x="175" y="20" text-anchor="middle" fill="var(--text-secondary)" font-size="14" font-family="JetBrains Mono, monospace">L</text>
+                            <!-- Teto, tubo e continuações -->
+                            <rect x="60" y="84" width="360" height="8" fill="url(#hatchA)"></rect>
+                            <path d="M10,130 H52" fill="none" stroke="var(--pipe)" stroke-opacity="0.45" stroke-width="14" stroke-dasharray="8 6"></path>
+                            <path d="M470,332 V362" fill="none" stroke="var(--pipe)" stroke-opacity="0.45" stroke-width="14" stroke-dasharray="8 6"></path>
+                            <path d="M52,130 H470 V332" fill="none" stroke="var(--pipe)" stroke-width="14"></path>
 
-                            <!-- Suportes FP e SP topo -->
-                            <rect x="45" y="42" width="26" height="8" fill="url(#hatch)"></rect>
-                            <line x1="58" y1="50" x2="58" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
-                            <rect x="52" y="95" width="12" height="10" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"></rect>
+                            <!-- PF e PM1..PMN na perna horizontal -->
+                            <use href="#pfA" x="90"></use>
+                            <use href="#pmA" x="170"></use>
+                            <use href="#pmA" x="250"></use>
+                            <use href="#pmA" x="400"></use>
+                            <g fill="var(--text-secondary)" font-size="13" font-weight="600" text-anchor="middle">
+                                <text x="90" y="76">PF</text>
+                                <text x="170" y="76">PM<tspan dy="3" font-size="11">1</tspan></text>
+                                <text x="250" y="76">PM<tspan dy="3" font-size="11">2</tspan></text>
+                                <text x="325" y="76">…</text>
+                                <text x="400" y="76">PM<tspan dy="3" font-size="11">N</tspan></text>
+                            </g>
 
-                            <rect x="175" y="42" width="26" height="8" fill="url(#hatch)"></rect>
-                            <line x1="188" y1="50" x2="188" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
-                            <rect x="182" y="95" width="12" height="10" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"></rect>
+                            <!-- PF no fim do braço vertical -->
+                            <rect x="457" y="291" width="26" height="18" fill="var(--accent)" fill-opacity="0.85" stroke="var(--accent-light)" stroke-width="1.4"></rect>
+                            <line x1="457" y1="300" x2="410" y2="300" stroke="var(--text-tertiary)" stroke-width="2"></line>
+                            <rect x="402" y="285" width="8" height="30" fill="url(#hatchA)"></rect>
+                            <text x="392" y="305" text-anchor="end" fill="var(--text-secondary)" font-size="13" font-weight="600">PF</text>
 
-                            <!-- Tubo horizontal -->
-                            <rect x="20" y="100" width="290" height="16" fill="var(--pipe)"></rect>
-                            <line x1="130" y1="100" x2="122" y2="116" stroke="var(--primary)" stroke-width="2"></line>
-                            <line x1="140" y1="100" x2="132" y2="116" stroke="var(--primary)" stroke-width="2"></line>
+                            <!-- Cotas Ls e L -->
+                            <g stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="3 3">
+                                <line x1="486" y1="130" x2="600" y2="130"></line>
+                                <line x1="486" y1="300" x2="600" y2="300"></line>
+                                <line x1="90" y1="148" x2="90" y2="401"></line>
+                                <line x1="470" y1="362" x2="470" y2="401"></line>
+                            </g>
+                            <line x1="575" y1="132" x2="575" y2="298" stroke="var(--text-secondary)" stroke-width="1.2" marker-start="url(#c1)" marker-end="url(#c1)"></line>
+                            <line x1="92" y1="395" x2="468" y2="395" stroke="var(--text-secondary)" stroke-width="1.2" marker-start="url(#c1)" marker-end="url(#c1)"></line>
+                            <text x="590" y="220" fill="var(--text-secondary)" font-size="14" font-family="JetBrains Mono, monospace">L<tspan dy="3" font-size="11">s</tspan></text>
+                            <text x="280" y="386" text-anchor="middle" fill="var(--text-secondary)" font-size="14" font-family="JetBrains Mono, monospace">L</text>
 
-                            <!-- Curva / cotovelo -->
-                            <rect x="294" y="100" width="60" height="16" fill="var(--pipe)"></rect>
-                            <rect x="338" y="100" width="16" height="90" fill="var(--pipe)"></rect>
-
-                            <!-- ΔL ΔL marcas -->
-                            <line x1="320" y1="60" x2="320" y2="95" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
-                            <line x1="355" y1="60" x2="355" y2="95" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
-                            <line x1="392" y1="60" x2="392" y2="95" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
-                            <line x1="322" y1="55" x2="353" y2="55" stroke="var(--accent-light)" stroke-width="1.2" marker-start="url(#a1)" marker-end="url(#a2)"></line>
-                            <text x="337" y="47" text-anchor="middle" fill="var(--accent-light)" font-size="12" font-family="JetBrains Mono, monospace">ΔL</text>
-                            <line x1="357" y1="55" x2="390" y2="55" stroke="var(--accent-light)" stroke-width="1.2" marker-start="url(#a1)" marker-end="url(#a2)"></line>
-                            <text x="373" y="47" text-anchor="middle" fill="var(--accent-light)" font-size="12" font-family="JetBrains Mono, monospace">ΔL</text>
-
-                            <!-- Tubo vertical descendo -->
-                            <rect x="338" y="100" width="16" height="180" fill="var(--pipe)"></rect>
-
-                            <!-- Suporte inferior FP -->
-                            <rect x="330" y="278" width="32" height="10" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"></rect>
-                            <line x1="362" y1="283" x2="400" y2="283" stroke="var(--text-tertiary)" stroke-width="2"></line>
-                            <rect x="400" y="270" width="8" height="26" fill="url(#hatch)"></rect>
-
-                            <!-- Dimensão Ls -->
-                            <line x1="440" y1="95" x2="440" y2="283" stroke="var(--text-secondary)" stroke-width="1.2" marker-start="url(#a1)" marker-end="url(#a2)"></line>
-                            <text x="452" y="195" fill="var(--text-secondary)" font-size="14" font-family="JetBrains Mono, monospace">L</text>
-                            <text x="458" y="200" fill="var(--text-secondary)" font-size="9" font-family="JetBrains Mono, monospace">s</text>
-
-                            <!-- Labels FP / SP -->
-                            <text x="40" y="130" fill="var(--text-secondary)" font-size="12" font-weight="600">FP</text>
-                            <text x="170" y="130" fill="var(--text-secondary)" font-size="12" font-weight="600">SP</text>
-                            <text x="316" y="298" fill="var(--text-secondary)" font-size="12" font-weight="600">FP</text>
-
-                            <text x="20" y="325" fill="var(--text-tertiary)" font-size="11" font-weight="600">FP: Fixed point</text>
-                            <text x="20" y="338" fill="var(--text-tertiary)" font-size="11" font-weight="600">SP: Slide point</text>
+                            <!-- Legenda -->
+                            <rect x="30" y="424" width="14" height="14" fill="var(--accent)" fill-opacity="0.85" stroke="var(--accent-light)" stroke-width="1.4"></rect>
+                            <text x="54" y="436" fill="var(--text-tertiary)" font-size="12" font-weight="600">PF: ponto fixo</text>
+                            <circle cx="37" cy="454" r="7" fill="none" stroke="var(--text-secondary)" stroke-width="2"></circle>
+                            <text x="54" y="458" fill="var(--text-tertiary)" font-size="12" font-weight="600">PM: ponto móvel</text>
                         </svg>
-                        <p class="diagram-caption">Braço de dilatação: pontos fixos (FP), pontos deslizantes (SP) e desenvolvimento do braço elástico Ls</p>
+                        <p class="diagram-caption">Braço de dilatação: pontos fixos (PF), pontos móveis (PM), comprimento L do PF ao cotovelo e comprimento do braço Ls</p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -564,107 +554,72 @@
                     </div>
 
                     <div class="diagram-wrap mb-6">
-                        <svg viewBox="0 0 760 380" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lira de dilatação com pontos fixos PF de extremo e central, pontos móveis PM, cotas L, Lc e Ls">
                             <defs>
-                                <marker id="b1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path></marker>
-                                <marker id="b2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path></marker>
-                                <pattern id="hatch2" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-                                    <line x1="0" y1="0" x2="0" y2="8" stroke="var(--text-tertiary)" stroke-width="2"></line>
-                                </pattern>
+                                <marker id="d1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 Z" fill="var(--text-secondary)"></path></marker>
+                                <pattern id="hatchB" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="8" stroke="var(--text-tertiary)" stroke-width="2"></line></pattern>
+                                <g id="pfB"><line x1="0" y1="92" x2="0" y2="117" stroke="var(--text-tertiary)" stroke-width="2"></line><rect x="-10" y="117" width="20" height="26" fill="var(--accent)" fill-opacity="0.85" stroke="var(--accent-light)" stroke-width="1.4"></rect></g>
+                                <g id="pmB"><line x1="0" y1="92" x2="0" y2="117" stroke="var(--text-tertiary)" stroke-width="2"></line><circle cx="0" cy="130" r="13" fill="none" stroke="var(--text-secondary)" stroke-width="2"></circle></g>
+                                <g id="pfBase"><rect x="-13" y="319" width="26" height="22" fill="var(--accent)" fill-opacity="0.85" stroke="var(--accent-light)" stroke-width="1.4"></rect><line x1="0" y1="341" x2="0" y2="362" stroke="var(--text-tertiary)" stroke-width="2"></line><rect x="-15" y="362" width="30" height="8" fill="url(#hatchB)"></rect></g>
                             </defs>
 
-                            <!-- Dimensões L, Lc, L -->
-                            <line x1="20" y1="25" x2="240" y2="25" stroke="var(--text-secondary)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
-                            <text x="130" y="17" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-family="JetBrains Mono, monospace">L</text>
+                            <!-- Tetos, tubo em U e continuações -->
+                            <rect x="40" y="84" width="160" height="8" fill="url(#hatchB)"></rect>
+                            <rect x="400" y="84" width="160" height="8" fill="url(#hatchB)"></rect>
+                            <path d="M8,130 H32" fill="none" stroke="var(--pipe)" stroke-opacity="0.45" stroke-width="14" stroke-dasharray="8 6"></path>
+                            <path d="M568,130 H592" fill="none" stroke="var(--pipe)" stroke-opacity="0.45" stroke-width="14" stroke-dasharray="8 6"></path>
+                            <path d="M32,130 H230 V330 H370 V130 H568" fill="none" stroke="var(--pipe)" stroke-width="14"></path>
 
-                            <line x1="240" y1="45" x2="520" y2="45" stroke="var(--text-secondary)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
-                            <text x="380" y="37" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-family="JetBrains Mono, monospace">Lc</text>
-
-                            <line x1="520" y1="25" x2="740" y2="25" stroke="var(--text-secondary)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
-                            <text x="630" y="17" text-anchor="middle" fill="var(--text-secondary)" font-size="13" font-family="JetBrains Mono, monospace">L</text>
-
-                            <!-- Suportes topo -->
-                            <g font-size="11" font-weight="600" fill="var(--text-secondary)">
-                                <rect x="30" y="58" width="24" height="7" fill="url(#hatch2)"></rect>
-                                <line x1="42" y1="65" x2="42" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
-                                <rect x="36" y="95" width="12" height="9" fill="none" stroke="var(--text-secondary)" stroke-width="1.4"></rect>
-                                <text x="26" y="122">FP</text>
-
-                                <rect x="140" y="58" width="24" height="7" fill="url(#hatch2)"></rect>
-                                <line x1="152" y1="65" x2="152" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
-                                <rect x="146" y="95" width="12" height="9" fill="none" stroke="var(--text-secondary)" stroke-width="1.4"></rect>
-                                <text x="136" y="122">SP</text>
-
-                                <rect x="596" y="58" width="24" height="7" fill="url(#hatch2)"></rect>
-                                <line x1="608" y1="65" x2="608" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
-                                <rect x="602" y="95" width="12" height="9" fill="none" stroke="var(--text-secondary)" stroke-width="1.4"></rect>
-                                <text x="595" y="122">SP</text>
-
-                                <rect x="706" y="58" width="24" height="7" fill="url(#hatch2)"></rect>
-                                <line x1="718" y1="65" x2="718" y2="95" stroke="var(--text-tertiary)" stroke-width="2"></line>
-                                <rect x="712" y="95" width="12" height="9" fill="none" stroke="var(--text-secondary)" stroke-width="1.4"></rect>
-                                <text x="700" y="122">FP</text>
+                            <!-- PF de extremo, PM1..PMN e PF central -->
+                            <use href="#pfB" x="50"></use>
+                            <use href="#pmB" x="100"></use>
+                            <use href="#pmB" x="190"></use>
+                            <use href="#pmB" x="410"></use>
+                            <use href="#pmB" x="500"></use>
+                            <use href="#pfB" x="550"></use>
+                            <use href="#pfBase" x="300"></use>
+                            <g fill="var(--text-secondary)" font-size="13" font-weight="600" text-anchor="middle">
+                                <text x="50" y="76">PF</text>
+                                <text x="100" y="76">PM<tspan dy="3" font-size="11">1</tspan></text>
+                                <text x="145" y="76">…</text>
+                                <text x="190" y="76">PM<tspan dy="3" font-size="11">N</tspan></text>
+                                <text x="410" y="76">PM<tspan dy="3" font-size="11">N</tspan></text>
+                                <text x="455" y="76">…</text>
+                                <text x="500" y="76">PM<tspan dy="3" font-size="11">1</tspan></text>
+                                <text x="550" y="76">PF</text>
                             </g>
+                            <text x="322" y="358" fill="var(--text-secondary)" font-size="13" font-weight="600">PF</text>
 
-                            <!-- Tubo horizontal esquerda / direita -->
-                            <rect x="20" y="108" width="220" height="15" fill="var(--pipe)"></rect>
-                            <rect x="500" y="108" width="220" height="15" fill="var(--pipe)"></rect>
-                            <line x1="105" y1="108" x2="97" y2="123" stroke="var(--primary)" stroke-width="2"></line>
-                            <line x1="115" y1="108" x2="107" y2="123" stroke="var(--primary)" stroke-width="2"></line>
-                            <line x1="635" y1="108" x2="627" y2="123" stroke="var(--primary)" stroke-width="2"></line>
-                            <line x1="645" y1="108" x2="637" y2="123" stroke="var(--primary)" stroke-width="2"></line>
+                            <!-- Linhas de chamada e cotas Lc, L, Ls -->
+                            <g stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="3 3">
+                                <line x1="230" y1="66" x2="230" y2="122"></line>
+                                <line x1="370" y1="66" x2="370" y2="122"></line>
+                                <line x1="50" y1="148" x2="50" y2="416"></line>
+                                <line x1="300" y1="374" x2="300" y2="416"></line>
+                                <line x1="550" y1="148" x2="550" y2="416"></line>
+                                <line x1="598" y1="130" x2="650" y2="130"></line>
+                                <line x1="386" y1="330" x2="650" y2="330"></line>
+                            </g>
+                            <g stroke="var(--text-secondary)" stroke-width="1.2" fill="none">
+                                <line x1="232" y1="70" x2="368" y2="70" marker-start="url(#d1)" marker-end="url(#d1)"></line>
+                                <line x1="52" y1="410" x2="298" y2="410" marker-start="url(#d1)" marker-end="url(#d1)"></line>
+                                <line x1="302" y1="410" x2="548" y2="410" marker-start="url(#d1)" marker-end="url(#d1)"></line>
+                                <line x1="632" y1="132" x2="632" y2="328" marker-start="url(#d1)" marker-end="url(#d1)"></line>
+                            </g>
+                            <g fill="var(--text-secondary)" font-size="14" font-family="JetBrains Mono, monospace" text-anchor="middle">
+                                <text x="300" y="58">L<tspan dy="3" font-size="11">c</tspan></text>
+                                <text x="175" y="402">L</text>
+                                <text x="425" y="402">L</text>
+                            </g>
+                            <text x="642" y="235" fill="var(--text-secondary)" font-size="14" font-family="JetBrains Mono, monospace">L<tspan dy="3" font-size="11">s</tspan></text>
 
-                            <!-- curvas descendo -->
-                            <rect x="240" y="108" width="55" height="15" fill="var(--pipe)"></rect>
-                            <rect x="280" y="108" width="15" height="70" fill="var(--pipe)"></rect>
-
-                            <rect x="465" y="108" width="55" height="15" fill="var(--pipe)"></rect>
-                            <rect x="465" y="108" width="15" height="70" fill="var(--pipe)"></rect>
-
-                            <!-- ΔL marks left -->
-                            <line x1="258" y1="70" x2="258" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
-                            <line x1="288" y1="70" x2="288" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
-                            <line x1="318" y1="70" x2="318" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
-                            <line x1="260" y1="65" x2="286" y2="65" stroke="var(--accent-light)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
-                            <text x="273" y="58" text-anchor="middle" fill="var(--accent-light)" font-size="11" font-family="JetBrains Mono, monospace">ΔL</text>
-                            <line x1="290" y1="65" x2="316" y2="65" stroke="var(--accent-light)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
-                            <text x="303" y="58" text-anchor="middle" fill="var(--accent-light)" font-size="11" font-family="JetBrains Mono, monospace">ΔL</text>
-
-                            <!-- ΔL marks right -->
-                            <line x1="440" y1="70" x2="440" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
-                            <line x1="470" y1="70" x2="470" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
-                            <line x1="500" y1="70" x2="500" y2="103" stroke="var(--text-tertiary)" stroke-width="1" stroke-dasharray="2,2"></line>
-                            <line x1="442" y1="65" x2="468" y2="65" stroke="var(--accent-light)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
-                            <text x="455" y="58" text-anchor="middle" fill="var(--accent-light)" font-size="11" font-family="JetBrains Mono, monospace">ΔL</text>
-                            <line x1="472" y1="65" x2="498" y2="65" stroke="var(--accent-light)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
-                            <text x="485" y="58" text-anchor="middle" fill="var(--accent-light)" font-size="11" font-family="JetBrains Mono, monospace">ΔL</text>
-
-                            <!-- Lms dimension -->
-                            <line x1="295" y1="145" x2="465" y2="145" stroke="var(--text-secondary)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
-                            <text x="380" y="138" text-anchor="middle" fill="var(--text-secondary)" font-size="12" font-family="JetBrains Mono, monospace">Lms</text>
-
-                            <!-- Vertical drops to U -->
-                            <rect x="280" y="178" width="15" height="150" fill="var(--pipe)"></rect>
-                            <rect x="465" y="178" width="15" height="150" fill="var(--pipe)"></rect>
-
-                            <!-- Base U -->
-                            <rect x="280" y="313" width="200" height="15" fill="var(--pipe)"></rect>
-
-                            <!-- Suporte central inferior FP -->
-                            <rect x="364" y="322" width="32" height="9" fill="none" stroke="var(--text-secondary)" stroke-width="1.4"></rect>
-                            <line x1="380" y1="331" x2="380" y2="358" stroke="var(--text-tertiary)" stroke-width="2"></line>
-                            <rect x="368" y="358" width="24" height="8" fill="url(#hatch2)"></rect>
-                            <text x="368" y="345" fill="var(--text-secondary)" font-size="11" font-weight="600">FP</text>
-
-                            <!-- Dimensão Ls -->
-                            <line x1="540" y1="103" x2="540" y2="322" stroke="var(--text-secondary)" stroke-width="1.1" marker-start="url(#b1)" marker-end="url(#b2)"></line>
-                            <text x="552" y="215" fill="var(--text-secondary)" font-size="13" font-family="JetBrains Mono, monospace">L</text>
-                            <text x="558" y="220" fill="var(--text-secondary)" font-size="8" font-family="JetBrains Mono, monospace">s</text>
-
-                            <text x="20" y="355" fill="var(--text-tertiary)" font-size="11" font-weight="600">FP: Fixed point</text>
-                            <text x="20" y="368" fill="var(--text-tertiary)" font-size="11" font-weight="600">SP: Slide point</text>
+                            <!-- Legenda -->
+                            <rect x="30" y="441" width="14" height="14" fill="var(--accent)" fill-opacity="0.85" stroke="var(--accent-light)" stroke-width="1.4"></rect>
+                            <text x="54" y="453" fill="var(--text-tertiary)" font-size="12" font-weight="600">PF: ponto fixo</text>
+                            <circle cx="247" cy="448" r="7" fill="none" stroke="var(--text-secondary)" stroke-width="2"></circle>
+                            <text x="264" y="453" fill="var(--text-tertiary)" font-size="12" font-weight="600">PM: ponto móvel</text>
                         </svg>
-                        <p class="diagram-caption">Lira de dilatação: equivalente a um duplo braço, com largura mínima Lc ≥ 2×de</p>
+                        <p class="diagram-caption">Lira de dilatação: PF de extremo e central, L de cada lado, largura Lc e profundidade Ls</p>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
