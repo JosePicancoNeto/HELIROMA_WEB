@@ -1,0 +1,126 @@
+/* dilatacao-padrao.css — estilos do separador "Cálculo padrão" de HELIROMA-CALC.html.
+   Tudo está sob #tab-padrao (não afeta o resto da página) e usa as variáveis de tema da
+   página (--primary, --accent, --border, --text-*…), por isso acompanha o tema claro/escuro.
+   Carregar DEPOIS do <style> da página e ANTES de theme.css não é necessário: só usa var(). */
+
+#tab-padrao {
+    /* tokens locais (dp = dilatação padrão), derivados dos da página */
+    --dp-bg: var(--primary);
+    --dp-surface: var(--primary-light);
+    --dp-line: var(--border);
+    --dp-text: var(--text-primary);
+    --dp-text-2: var(--text-secondary);
+    --dp-text-3: var(--text-tertiary);
+    --dp-accent: var(--accent);
+    --dp-accent-text: var(--accent-light);
+    --dp-accent-soft: rgba(255, 138, 0, 0.12);
+    --dp-on-accent: #0a1f33;
+    --dp-pf: #ff8a00;
+    --dp-pipe: #6fae7c;
+    --dp-ok: var(--success);
+    --dp-ok-soft: rgba(53, 208, 160, 0.12);
+    --dp-warn: var(--warning);
+    --dp-warn-soft: rgba(245, 184, 74, 0.12);
+    --dp-danger: #ff8078;
+    --dp-danger-soft: rgba(255, 128, 120, 0.12);
+}
+html:not([data-theme="dark"]) #tab-padrao {
+    --dp-accent-soft: rgba(0, 165, 91, 0.10);
+    --dp-on-accent: #ffffff;
+    --dp-pf: #d97400;
+    --dp-pipe: #00a55b;
+    --dp-ok-soft: rgba(0, 122, 67, 0.10);
+    --dp-warn-soft: rgba(154, 103, 0, 0.12);
+    --dp-danger: #c62828;
+    --dp-danger-soft: rgba(198, 40, 40, 0.10);
+}
+
+#tab-padrao [hidden] { display: none !important; }
+#tab-padrao .dp-col { display: flex; flex-direction: column; gap: 1.5rem; min-width: 0; }
+#tab-padrao .dp-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+#tab-padrao .dp-step { font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--dp-accent-text); margin-right: 6px; }
+#tab-padrao .dp-divider { border: 0; border-top: 1px dashed var(--dp-line); margin: 0.25rem 0 1rem; }
+#tab-padrao .dp-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+#tab-padrao .dp-title { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.95rem; font-weight: 600; margin: 0 0 1rem; }
+
+/* escolha do esquema (L ou reto) */
+#tab-padrao .dp-legend { display: block; font-size: 0.875rem; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.5rem; }
+#tab-padrao .dp-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
+#tab-padrao .dp-choice label { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 10px; border: 1px solid var(--dp-line); background: var(--dp-bg); border-radius: 2px; cursor: pointer; text-transform: none; letter-spacing: 0; font-size: 0.875rem; color: var(--dp-text); margin: 0; }
+#tab-padrao .dp-choice label small { color: var(--dp-text-3); font-weight: 400; }
+#tab-padrao .dp-choice input { position: absolute; opacity: 0; pointer-events: none; }
+#tab-padrao .dp-choice label:has(input:checked) { border-color: var(--dp-accent); background: var(--dp-accent-soft); }
+#tab-padrao .dp-choice label:has(input:focus-visible) { outline: 2px solid var(--dp-accent); outline-offset: 2px; }
+#tab-padrao .dp-choice svg { width: 100%; height: 34px; }
+
+#tab-padrao .dp-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+#tab-padrao .dp-presets button { font-size: 0.8125rem; padding: 6px 10px; background: var(--dp-bg); color: var(--dp-text-2); border: 1px solid var(--dp-line); border-radius: 2px; cursor: pointer; }
+#tab-padrao .dp-presets button:hover { border-color: var(--dp-accent); color: var(--dp-text); }
+
+/* veredicto e cartões de valores */
+#tab-padrao .dp-verdict { border-left: 4px solid var(--dp-accent); background: var(--dp-accent-soft); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+#tab-padrao .dp-verdict.ok { border-left-color: var(--dp-ok); background: var(--dp-ok-soft); }
+#tab-padrao .dp-verdict.bad { border-left-color: var(--dp-danger); background: var(--dp-danger-soft); }
+#tab-padrao .dp-pill { align-self: flex-start; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 2px; background: var(--dp-accent); color: var(--dp-on-accent); }
+#tab-padrao .dp-verdict.ok .dp-pill { background: var(--dp-ok); }
+#tab-padrao .dp-verdict.bad .dp-pill { background: var(--dp-danger); color: #fff; }
+#tab-padrao .dp-verdict h3 { margin: 0; font-size: 1.2rem; font-weight: 600; color: var(--dp-text); text-wrap: balance; }
+#tab-padrao .dp-verdict p { margin: 0; color: var(--dp-text-2); max-width: 68ch; }
+
+#tab-padrao .dp-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+#tab-padrao .dp-tile { background: var(--dp-bg); border: 1px solid var(--dp-line); border-radius: 2px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+#tab-padrao .dp-tile .k { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dp-text-3); }
+#tab-padrao .dp-tile .v { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; color: var(--dp-text); }
+#tab-padrao .dp-tile .s { font-size: 12px; color: var(--dp-text-3); }
+#tab-padrao .dp-tile.main { border-color: var(--dp-accent); }
+#tab-padrao .dp-tile.main .v { color: var(--dp-accent-text); }
+
+/* esquema + ecrã inteiro */
+#tab-padrao .dp-diagram { position: relative; background: var(--dp-bg); border: 1px solid var(--dp-line); border-radius: 2px; padding: 10px; overflow-x: auto; }
+#tab-padrao .dp-diagram > svg.dp-svg { display: block; width: 100%; min-width: 520px; height: auto; }
+#tab-padrao .dp-diagram p { margin: 6px 0 0; text-align: center; font-size: 12px; color: var(--dp-text-3); }
+#tab-padrao .dp-fsbtn { position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; display: grid; place-items: center; background: var(--dp-surface); color: var(--dp-text-2); border: 1px solid var(--dp-line); border-radius: 2px; cursor: pointer; padding: 0; z-index: 2; }
+#tab-padrao .dp-fsbtn:hover { color: var(--dp-text); border-color: var(--dp-text-3); }
+#tab-padrao .dp-fsbtn:focus-visible { outline: 2px solid var(--dp-pf); outline-offset: 2px; }
+#tab-padrao .dp-fsbtn svg { width: 20px; height: 20px; min-width: 0; }
+#tab-padrao .dp-fsbtn .ico-out { display: none; }
+#tab-padrao .dp-diagram.dp-fs .dp-fsbtn .ico-in { display: none; }
+#tab-padrao .dp-diagram.dp-fs .dp-fsbtn .ico-out { display: block; }
+#tab-padrao .dp-diagram.dp-fs { position: fixed; inset: 0; z-index: 10000; border: 0; border-radius: 0; overflow: auto; display: flex; flex-direction: column; justify-content: center;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+#tab-padrao .dp-diagram.dp-fs > svg.dp-svg { flex: 1 1 auto; min-width: 0; min-height: 0; width: 100%; height: 100%; }
+#tab-padrao .dp-diagram.dp-fs .dp-fsrot { display: none; }
+@media (orientation: portrait) { #tab-padrao .dp-diagram.dp-fs .dp-fsrot { display: block; } }
+body.dp-fs-open { overflow: hidden; }
+/* Os cartões da página usam backdrop-filter/transform (animação de entrada): isso faria de cada cartão o
+   "ecrã" do position:fixed e o esquema ficaria preso dentro dele. Enquanto o ecrã inteiro está aberto
+   (sobreposição, quando o browser não dá ecrã inteiro nativo) desligamos esses efeitos. */
+body.dp-fs-open .card, body.dp-fs-open .animate-fade-in-up { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; transform: none !important; animation: none !important; filter: none !important; transition: none !important; }
+html:has(body.dp-fs-open) { overflow: hidden; }   /* sem barra de deslocamento ao lado do esquema */
+
+/* passos e tabelas */
+#tab-padrao ol.dp-steps { list-style: decimal; margin: 0; padding-left: 24px; display: flex; flex-direction: column; gap: 6px; color: var(--dp-text-2); }
+#tab-padrao ol.dp-steps li::marker { font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--dp-accent-text); }
+#tab-padrao .dp-tablewrap { overflow-x: auto; }
+#tab-padrao .dp-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+#tab-padrao .dp-table th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dp-text-3); padding: 6px 8px; border-bottom: 2px solid var(--dp-line); white-space: nowrap; }
+#tab-padrao .dp-table td { padding: 8px; border-bottom: 1px solid var(--dp-line); vertical-align: top; color: var(--dp-text); }
+#tab-padrao .dp-table td.num { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#tab-padrao .dp-table tr.chosen td { background: var(--dp-accent-soft); }
+#tab-padrao .dp-st { display: inline-block; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; padding: 1px 7px; border-radius: 2px; border: 1px solid currentColor; white-space: nowrap; }
+#tab-padrao .dp-st.escolhida { background: var(--dp-accent); color: var(--dp-on-accent); border-color: var(--dp-accent); }
+#tab-padrao .dp-st.valida { color: var(--dp-ok); }
+#tab-padrao .dp-st.nao-cabe { color: var(--dp-danger); }
+#tab-padrao .dp-st.na { color: var(--dp-text-3); }
+#tab-padrao td .why { display: block; color: var(--dp-text-3); font-size: 12px; margin-top: 2px; }
+
+#tab-padrao .dp-notes { display: flex; flex-direction: column; gap: 8px; }
+#tab-padrao .dp-note { border-left: 3px solid var(--dp-warn); background: var(--dp-warn-soft); padding: 8px 12px; font-size: 13px; color: var(--dp-text); }
+#tab-padrao .dp-note.info { border-left-color: var(--dp-text-3); background: var(--dp-surface); }
+#tab-padrao .dp-note.tip { border-left-color: var(--dp-ok); background: var(--dp-ok-soft); }
+#tab-padrao .dp-note b { font-weight: 600; }
+#tab-padrao .dp-err { border-left: 3px solid var(--dp-danger); background: var(--dp-danger-soft); padding: 10px 12px; color: var(--dp-text); }
+
+@media (max-width: 640px) {
+    #tab-padrao .dp-row2, #tab-padrao .dp-choice { grid-template-columns: 1fr; }
+}

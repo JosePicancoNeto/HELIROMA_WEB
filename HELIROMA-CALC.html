@@ -1095,6 +1095,7 @@
    </style>
 
 <link rel="stylesheet" href="nav.css">
+<link rel="stylesheet" href="dilatacao-padrao.css">
 <script src="nav.js" defer></script>
 <!-- Tailwind compilado (vendor/tailwind.min.css; ver vendor/README.md). Último no <head>, como o antigo CDN. -->
 <link rel="stylesheet" href="vendor/tailwind.min.css">
@@ -1147,29 +1148,117 @@
             <!-- Abas Principais -->
             <div class="card p-6 mb-8 animate-fade-in-up">
                 <div class="tabs-container">
-                    <button class="tab-button active" data-tab="tab-calculator">
-                        <i class="fas fa-calculator mr-2"></i>Calculadora Detalhada
+                    <button type="button" class="tab-button active" data-tab="tab-padrao">
+                        <i class="fas fa-wand-magic-sparkles mr-2"></i>Cálculo Padrão
                     </button>
-		    <button class="tab-button" data-tab="tab-history">
+                    <button type="button" class="tab-button" data-tab="tab-calculator">
+                        <i class="fas fa-calculator mr-2"></i>Cálculo Avançado
+                    </button>
+		    <button type="button" class="tab-button" data-tab="tab-history">
                         <i class="fas fa-history mr-2"></i>Histórico
                     </button>
-                    <button class="tab-button" data-tab="tab-support">
+                    <button type="button" class="tab-button" data-tab="tab-support">
                         <i class="fas fa-table mr-2"></i>Intervalos de Suporte
                     </button>
-                    <button class="tab-button" data-tab="tab-compatibilizacao">
+                    <button type="button" class="tab-button" data-tab="tab-compatibilizacao">
                         <i class="fas fa-layer-group mr-2"></i>Compatibilização
                     </button>
                 </div>
 
                 <select id="tabSelectorMobile" class="tab-selector-mobile" aria-label="Selecionar secção">
-                    <option value="tab-calculator">Calculadora Detalhada</option>
+                    <option value="tab-padrao">Cálculo Padrão</option>
+                    <option value="tab-calculator">Cálculo Avançado</option>
                     <option value="tab-history">Histórico</option>
                     <option value="tab-support">Intervalos de Suporte</option>
                     <option value="tab-compatibilizacao">Compatibilização</option>
                 </select>
 
-                <!-- ABA 1: CALCULADORA DETALHADA -->
-                <div id="tab-calculator" class="tab-content active pt-8">
+                <!-- ABA 1: CÁLCULO PADRÃO (decide sozinho: sem compensação, braço ou lira).
+                     Lógica em dilatacao-engine.js; interface em dilatacao-padrao.js/.css -->
+                <div id="tab-padrao" class="tab-content active pt-8">
+                    <div class="dp-col">
+                        <section class="card p-6">
+                            <h2 class="text-xl font-bold text-white mb-6 flex items-center">
+                                <i class="fas fa-edit text-blue-400 mr-3"></i>Parâmetros de Entrada
+                            </h2>
+                            <form id="form-padrao" class="form-wrapper" autocomplete="off">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label class="label-custom" for="pd-L"><span class="dp-step">1</span>Comprimento do Vão Livre - L (m)</label>
+                                        <input type="number" id="pd-L" min="0" step="0.1" value="20" inputmode="decimal">
+                                        <p class="help-text" id="pd-L-help"></p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="label-custom" for="pd-tipo"><span class="dp-step">2</span>Tipo de Tubo</label>
+                                        <select id="pd-tipo"></select>
+                                        <p class="help-text" id="pd-tipo-help"></p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="label-custom" for="pd-d">Diâmetro - Ø (mm)</label>
+                                        <select id="pd-d"></select>
+                                        <p class="help-text">Diâmetro exterior do tubo</p>
+                                    </div>
+                                </div>
+                                <div class="form-row" style="margin-top:1.5rem">
+                                    <div class="form-group">
+                                        <label class="label-custom" for="pd-sistema"><span class="dp-step">3</span>Sistema</label>
+                                        <select id="pd-sistema"></select>
+                                        <p class="help-text">Frio, retorno ou quente</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="label-custom" for="pd-analise">Análise</label>
+                                        <select id="pd-analise"></select>
+                                        <p class="help-text" id="pd-dt-help"></p>
+                                    </div>
+                                </div>
+
+                                <div id="pd-compensacao" style="margin-top:1.5rem">
+                                    <hr class="dp-divider">
+                                    <div class="form-group">
+                                        <span class="dp-legend" id="pd-esq-legend"><span class="dp-step">4</span>Como termina o vão?</span>
+                                        <div class="dp-choice" role="radiogroup" aria-labelledby="pd-esq-legend">
+                                            <label>
+                                                <input type="radio" name="pd-esquema" id="pd-esq-L" value="L" checked>
+                                                <svg viewBox="0 0 120 34" aria-hidden="true"><path d="M6,8 H96 V30" fill="none" stroke="var(--dp-pipe)" stroke-width="5"/><rect x="10" y="3" width="8" height="10" fill="var(--dp-pf)"/><rect x="91" y="24" width="10" height="8" fill="var(--dp-pf)"/></svg>
+                                                Mudança de direção no fim (L)
+                                                <small>A perna perpendicular pode servir de braço.</small>
+                                            </label>
+                                            <label>
+                                                <input type="radio" name="pd-esquema" id="pd-esq-reto" value="reto">
+                                                <svg viewBox="0 0 120 34" aria-hidden="true"><path d="M6,17 H114" fill="none" stroke="var(--dp-pipe)" stroke-width="5"/><rect x="10" y="12" width="8" height="10" fill="var(--dp-pf)"/><rect x="102" y="12" width="8" height="10" fill="var(--dp-pf)"/></svg>
+                                                Vão livre reto
+                                                <small>Sem mudança de direção entre os pontos fixos.</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group" id="pd-Lu-field">
+                                            <label class="label-custom" for="pd-Lu">Comprimento Disponível para o Braço - Lu (m)</label>
+                                            <input type="number" id="pd-Lu" min="0" step="0.1" placeholder="Opcional" inputmode="decimal">
+                                            <p class="help-text">Distância livre entre o cotovelo e o ponto fixo. Em branco: sem restrição.</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="label-custom" for="pd-prof">Profundidade Disponível para a Lira (m)</label>
+                                            <input type="number" id="pd-prof" min="0" step="0.1" placeholder="Opcional" inputmode="decimal">
+                                            <p class="help-text">Espaço livre para as pernas da lira. Em branco: sem restrição.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </section>
+
+                        <section class="card p-6">
+                            <h2 class="dp-title">Casos de Exemplo</h2>
+                            <div class="dp-presets" id="pd-presets"></div>
+                            <p class="help-text">Cada botão preenche as entradas com um caso de teste.</p>
+                        </section>
+
+                        <div class="dp-col" id="pd-resultado" aria-live="polite"></div>
+                    </div>
+                </div>
+
+                <!-- ABA 2: CÁLCULO AVANÇADO (antes "Calculadora Detalhada"): modelo escolhido à mão -->
+                <div id="tab-calculator" class="tab-content pt-8">
                     <!-- Seção de Inputs -->
                     <section id="input-section" class="card p-6 mb-8">
                         <h2 class="text-xl font-bold text-white mb-6 flex items-center">
@@ -1242,11 +1331,11 @@
                                     <p class="help-text">Comprimento útil da tubagem</p>
                                 </div>
 
-                                <!-- Campo N - Dinâmico (aparece apenas com Lira) -->
+                                <!-- Número de liras - Dinâmico (aparece apenas com Lira); N = 2 × liras -->
                                 <div id="fieldN" class="form-group field-dynamic hidden-field">
-                                    <label class="label-custom">N (Número de Secções)</label>
-                                    <input type="number" id="paramN" min="1" step="1" value="2" placeholder="Ex: 2">
-                                    <p class="help-text">Número de secções na lira</p>
+                                    <label class="label-custom" for="paramN">Número de Liras</label>
+                                    <input type="number" id="paramN" min="1" step="1" value="1" placeholder="Ex: 1">
+                                    <p class="help-text" id="lirasHelp">Liras iguais e igualmente espaçadas: L_cálc = L ÷ (2 × liras)</p>
                                 </div>
                             </div>
 
@@ -1346,8 +1435,8 @@
                                 <p class="text-lg">2 × ΔL + 200 = <span id="formula-lc-min" class="text-blue-300">-</span> mm</p>
                             </div>
                             <div id="formulaN" class="formula-box hidden field-dynamic hidden-field">
-                                <p class="text-slate-400 mb-2">Comprimento por Secção</p>
-                                <p class="text-lg">L_total ÷ N = <span id="formula-n-result" class="text-blue-300">-</span> m</p>
+                                <p class="text-slate-400 mb-2">Comprimento por Perna da Lira</p>
+                                <p class="text-lg">L_total ÷ (2 × liras) = <span id="formula-n-result" class="text-blue-300">-</span> m</p>
                             </div>
                         </div>
                     </section>
@@ -1408,8 +1497,8 @@
                                     </tr>
                                     <tr id="resN" class="entrada hidden">
                                         <td><span class="text-green-400">ENTRADA</span></td>
-                                        <td>Número de Secções</td>
-                                        <td class="mono-font">N</td>
+                                        <td>Número de Liras</td>
+                                        <td class="mono-font">k</td>
                                         <td><span class="badge-value" id="res-n">-</span></td>
                                         <td>-</td>
                                     </tr>
@@ -1645,6 +1734,8 @@
     <!-- Tubos (diâmetros): heliroma-data.js, partilhado com COLETOR-PESO. Constantes C e α: dilatacao-data.js -->
     <script src="heliroma-data.js"></script>
     <script src="dilatacao-data.js"></script>
+    <script src="dilatacao-engine.js"></script>
+    <script src="dilatacao-padrao.js"></script>
 
     <!-- Abas (botões + seletor mobile) — partilhado com TEORIA-DILATACAO.html -->
     <script src="tabs.js"></script>
@@ -1767,13 +1858,31 @@
             }
         }
 
+        // Número de liras (Cálculo Avançado): inteiro de 1 a MAX_LIRAS; NaN se inválido.
+        const MAX_LIRAS = 50;
+        const LIRAS_HELP_DEFAULT = 'Liras iguais e igualmente espaçadas: L_cálc = L ÷ (2 × liras)';
+        function readLirasCount() {
+            const raw = document.getElementById('paramN').value.trim();
+            const k = Number(raw);
+            return raw !== '' && Number.isInteger(k) && k >= 1 && k <= MAX_LIRAS ? k : NaN;
+        }
+        /** Mostra (ou limpa) o erro do campo "Número de Liras". Devolve true se o valor é válido. */
+        function validateLirasField() {
+            const help = document.getElementById('lirasHelp');
+            const ok = !isNaN(readLirasCount());
+            help.textContent = ok ? LIRAS_HELP_DEFAULT : `Indique um número inteiro de liras entre 1 e ${MAX_LIRAS}.`;
+            help.style.color = ok ? '' : 'var(--danger, #ff8078)';
+            document.getElementById('paramN').setAttribute('aria-invalid', String(!ok));
+            return ok;
+        }
+
         /**
          * Calcular L_cálc baseado no tipo de modelo
          */
         function calculateLcalc() {
             const modelType = document.getElementById('modelType').value;
             const Ltotal = parseFloat(document.getElementById('totalSpan').value) || 0;
-            const N = parseFloat(document.getElementById('paramN').value) || 1;
+            const k = readLirasCount() || 1;  // a validação (e o erro visível) é feita em calculateThermalExpansion
 
             let Lcalc;
 
@@ -1781,8 +1890,9 @@
                 // Braço de Dilatação: L_cálc = L_total
                 Lcalc = Ltotal;
             } else {
-                // Lira de Dilatação: L_cálc = L_total / N
-                Lcalc = N > 0 ? Ltotal / N : 0;
+                // Lira de Dilatação: cada lira tem 2 pernas e cada perna recebe a dilatação
+                // de meio vão  ->  L_cálc = L_total / (2 × k)
+                Lcalc = Ltotal / (2 * k);
             }
 
             return Lcalc;
@@ -1960,7 +2070,14 @@
             const Ltotal = parseFloat(document.getElementById('totalSpan').value) || 0;
             const C = params.C || 0;
             const modelType = document.getElementById('modelType').value;
-            const N = parseFloat(document.getElementById('paramN').value) || 1;
+            const k = readLirasCount() || 1;
+
+            // Número de liras inválido: erro visível e sem resultados desatualizados
+            if (modelType === 'lira' && !validateLirasField()) {
+                clearResults();
+                return;
+            }
+            if (modelType === 'lira') validateLirasField();   // limpa um erro anterior
 
             if (d <= 0 || alpha <= 0 || dT <= 0 || Ltotal <= 0 || C <= 0) {
                 // Seleção incompleta ou valores inválidos: limpa os resultados para não mostrar valores desatualizados
@@ -2005,7 +2122,7 @@
             document.getElementById('res-ltotal').textContent = formatNumber(Ltotal, 2) + ' m';
 
             if (modelType === 'lira') {
-                document.getElementById('res-n').textContent = formatNumber(N, 0);
+                document.getElementById('res-n').textContent = formatNumber(k, 0);
             }
 
             document.getElementById('res-c').textContent = formatNumber(C, 2);
@@ -2345,7 +2462,7 @@
             const tempChange = params.dT;
             const totalSpan = parseFloat(document.getElementById('totalSpan').value);
             const material = params.C;
-            const paramN = modelType === 'lira' ? parseInt(document.getElementById('paramN').value) : null;
+            const paramN = modelType === 'lira' ? readLirasCount() : null;  // número de liras (NaN se inválido: o cálculo não chega a ser guardado)
 
             // Extrair valores calculados da tela
             const resLsText = document.getElementById('summary-ls')?.textContent || '- mm';
@@ -2754,6 +2871,20 @@
         renderSupportIntervalsTable();
         setupTabs();
         renderHistoryTable();
+
+        // Cálculo Padrão: mesmas fontes de dados e mesma tabela de ΔT que o Cálculo Avançado
+        (function initCalculoPadrao() {
+            const tubos = {};
+            getPipeTypeNames().forEach(n => { tubos[n] = getPipeDiameters(n); });
+            HELIROMA_PADRAO.init({
+                tubos,
+                dilatacao: PIPES_DATA ? PIPES_DATA.dilatacao : {},
+                suportes: typeof SUPPORT_INTERVALS_DATA !== 'undefined' ? SUPPORT_INTERVALS_DATA : { temperaturas: [], tipos: [] },
+                deltaT: DELTA_T_TABLE,
+                sistemas: SYSTEM_OPTIONS,
+                analises: ANALYSIS_OPTIONS
+            });
+        })();
     </script>
 </body>
 </html>
