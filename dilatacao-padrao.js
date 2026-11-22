@@ -201,7 +201,11 @@ function fsAbrir(d) {
     const b = d.querySelector('.dp-fsbtn'); b.setAttribute('aria-label', 'Sair do ecrã inteiro'); b.title = 'Sair do ecrã inteiro';
     try {   // ecrã inteiro nativo e bloqueio horizontal, onde o browser permitir
         const p = d.requestFullscreen && d.requestFullscreen();
-        if (p && p.then) p.then(() => { try { screen.orientation.lock('landscape').catch(() => {}); } catch (_) { /* sem suporte neste browser: segue sem */ } }).catch(() => {});
+        if (p && p.then) p.then(() => {
+            // fechado entretanto (clique duplo rápido): não deixar o browser preso em ecrã inteiro
+            if (!d.classList.contains('dp-fs')) { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); return; }
+            try { screen.orientation.lock('landscape').catch(() => {}); } catch (_) { /* sem suporte neste browser: segue sem */ }
+        }).catch(() => {});
     } catch (_) { /* sem suporte neste browser: segue sem */ }
 }
 
